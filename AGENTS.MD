@@ -1,4 +1,4 @@
-# AGENTS.MD
+# AGENTS.md
 
 JuanCrg90 owns this. Conversation Starter: say hi + 1 motivating line.
 Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
@@ -10,7 +10,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - 3rd-party/OSS (non-JuanCrg90): clone under `~/Projects/oss`.
 - Files: repo or `~/Projects/agent-scripts`.
 - PRs: use `gh pr view/diff` (no URLs).
-- “Make a note” => edit AGENTS.MD (shortcut; not a blocker). Ignore `CLAUDE.md`.
+- “Make a note” => edit AGENTS.md (shortcut; not a blocker). Ignore `CLAUDE.md`.
 - No `./runner`. Guardrails: use `trash` for deletes.
 - Need upstream file: stage in `/tmp/`, then cherry-pick; never overwrite tracked.
 - Bugs: add regression test when it fits.
@@ -74,6 +74,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Multi-agent: check `git status/diff` before edits; ship small commits.
 
 ## Language/Stack Notes
+
 - Ruby On Rails: For Rails projects use rails-mcp-server to follow Rails community best practices, if it's not installed skip it
 
 ## Critical Thinking
@@ -85,6 +86,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Leave breadcrumb notes in thread.
 
 ## Security
+
 - Secrets/redaction: Never paste secrets/tokens; redact logs/outputs before sharing.
 
 ## Tools
@@ -118,6 +120,21 @@ Read `~/Projects/agent-scripts/tools.md` for the full tool catalog if it exists.
 
 - Use only when you need persistence/interaction (debugger/server).
 - Quick refs: `tmux new -d -s codex-shell`, `tmux attach -t codex-shell`, `tmux list-sessions`, `tmux kill-session -t codex-shell`.
+
+## Ruby
+
+Keep files ~100 LOC. Split as needed.
+
+### Testing Principles
+
+- Never test the type or shape of return values. Tests should verify behavior, not implementation details or data structures.
+- Each public method should have a test for its default return value with no setup.
+- When testing that a method returns the same value as its default, first establish setup that would make it return the opposite without your intervention. Otherwise the test is meaningless.
+- Keep variables as close as possible to where they're used. Don't put them in setup or as constants at the top of the test class.
+
+### Code Style
+
+- Use boolean expressions with implicit return for predicate methods, not guard clauses or case statements with literal true/false.
 
 <frontend_aesthetics>
 Avoid “AI slop” UI. Be opinionated + distinctive.

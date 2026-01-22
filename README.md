@@ -9,10 +9,11 @@ My source of truth for using agent skills with Codex, Claude, and Gemini.
 
 ## Repo Structure
 
-- `AGENTS.MD`: top-level operating instructions.
+- `AGENTS.md`: top-level operating instructions.
 - `tools.md`: tool catalog and usage notes.
 - `docs/`: guides, conventions, and references.
 - `scripts/`: helper scripts for agent tasks.
+- `skills/`: reusable skill definitions and references.
 
 ## Usage
 
@@ -23,3 +24,4 @@ My source of truth for using agent skills with Codex, Claude, and Gemini.
 ## Acknowledgment
 
 Inspired by @steipete agent-scripts repository <https://github.com/steipete/agent-scripts/>.
+Sandi Metz rules skill reference by @nateberkopec <https://github.com/nateberkopec/dotfiles/tree/main/files/home/.claude/skills/sandi-metz-rules>.
