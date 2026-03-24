@@ -1,6 +1,6 @@
 # Tools Reference
 
-CLI tools available on Peter's machines. Use these for agentic tasks.
+CLI tools available on Juan's machines. Use these for agentic tasks.
 
 ## gh
 

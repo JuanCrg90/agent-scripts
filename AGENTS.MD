@@ -148,3 +148,6 @@ Do:
 
 Avoid: purple-on-white clichés, generic component grids, predictable layouts.
 </frontend_aesthetics>
+
+## Gemini Added Memories
+- Initialize rbenv in the session if there are problems with ruby commands.

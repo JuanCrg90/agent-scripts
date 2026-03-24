@@ -12,5 +12,8 @@
       "command": "/Users/juancrg90/.rbenv/shims/rails-mcp-server",
       "args": []
     }
+  },
+  "general": {
+    "previewFeatures": true
   }
 }
