@@ -1,6 +1,7 @@
 # Agent Skills Hub
 
 My source of truth for using agent skills with Codex, Claude, and Gemini.
+MCP server definitions live here once and sync to both Gemini and Codex.
 
 ## Purpose
 
@@ -79,9 +80,32 @@ bin/agent-sync sync --symlink
 ### What syncs
 
 - `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`
-- `gemini/settings.json` → `~/.gemini/settings.json`
+- `gemini/settings.base.json` + `config/mcp/servers.json` → rendered `~/.gemini/settings.json`
+- `config/mcp/servers.json` → managed MCP block in `~/.codex/config.toml`
 - `skills/` → `~/.codex/skills`, `~/.gemini/antigravity/skills`
 - `scripts/commiter` → `~/.codex/scripts/commiter`
+
+### Shared MCP workflow
+
+Edit shared servers in `config/mcp/servers.json`.
+Keep Gemini-only non-MCP settings in `gemini/settings.base.json`.
+
+Then review and apply:
+
+```sh
+bin/agent-sync plan
+bin/agent-sync sync
+```
+
+Verify parity after sync:
+
+```sh
+codex mcp list
+jq '.mcpServers' ~/.gemini/settings.json
+```
+
+Codex MCP config is merged into a managed block inside `~/.codex/config.toml`.
+Leave other Codex settings outside that block so local model/trust config stays intact.
 
 ## Acknowledgment
 

@@ -55,6 +55,13 @@ func Apply(plan Plan, opts Options, prompt PromptFunc) error {
 			continue
 		}
 
+		if action.Content != nil {
+			if err := writeFile(action.Dest, action.Content, 0o644); err != nil {
+				return err
+			}
+			continue
+		}
+
 		if err := copyFile(action.Source, action.Dest); err != nil {
 			return err
 		}
@@ -80,6 +87,9 @@ func replaceSymlink(src, dest string) error {
 }
 
 func copyFile(src, dest string) error {
+	if err := removeSymlink(dest); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		return err
 	}
@@ -106,4 +116,31 @@ func copyFile(src, dest string) error {
 		return err
 	}
 	return os.Chmod(dest, info.Mode())
+}
+
+func writeFile(dest string, content []byte, mode os.FileMode) error {
+	if err := removeSymlink(dest); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(dest, content, mode); err != nil {
+		return err
+	}
+	return nil
+}
+
+func removeSymlink(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		return nil
+	}
+	return os.Remove(path)
 }

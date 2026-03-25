@@ -3,15 +3,18 @@ package syncer
 import "path/filepath"
 
 type Target struct {
-	Name   string
-	Source string
-	Dest   string
-	Kind   string
+	Name    string
+	Source  string
+	Sources []string
+	Dest    string
+	Kind    string
 }
 
 const (
-	KindFile = "file"
-	KindDir  = "dir"
+	KindFile         = "file"
+	KindDir          = "dir"
+	KindGeminiConfig = "gemini-config"
+	KindCodexConfig  = "codex-config"
 )
 
 func Targets(opts Options) []Target {
@@ -37,9 +40,22 @@ func Targets(opts Options) []Target {
 		},
 		{
 			Name:   "gemini-settings",
-			Source: filepath.Join(base, "gemini", "settings.json"),
-			Dest:   filepath.Join(opts.GeminiHome, "settings.json"),
-			Kind:   KindFile,
+			Source: "gemini/settings.base.json + config/mcp/servers.json",
+			Sources: []string{
+				filepath.Join(base, "gemini", "settings.base.json"),
+				filepath.Join(base, "config", "mcp", "servers.json"),
+			},
+			Dest: filepath.Join(opts.GeminiHome, "settings.json"),
+			Kind: KindGeminiConfig,
+		},
+		{
+			Name:   "codex-mcp",
+			Source: "config/mcp/servers.json",
+			Sources: []string{
+				filepath.Join(base, "config", "mcp", "servers.json"),
+			},
+			Dest: filepath.Join(opts.CodexHome, "config.toml"),
+			Kind: KindCodexConfig,
 		},
 		{
 			Name:   "skills-codex",

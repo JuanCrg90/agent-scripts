@@ -17,10 +17,11 @@ const (
 )
 
 type Action struct {
-	Type   ActionType
-	Source string
-	Dest   string
-	Note   string
+	Type    ActionType
+	Source  string
+	Dest    string
+	Note    string
+	Content []byte
 }
 
 type Plan struct {
@@ -34,7 +35,7 @@ func BuildPlan(opts Options) (Plan, error) {
 	}
 
 	for _, target := range Targets(opts) {
-		if opts.UseSymlink {
+		if opts.UseSymlink && !isManagedTarget(target) {
 			linkAction, err := buildLinkAction(target)
 			if err != nil {
 				return Plan{}, err
@@ -52,12 +53,22 @@ func BuildPlan(opts Options) (Plan, error) {
 				return Plan{}, err
 			}
 			actions = append(actions, dirActions...)
+		case KindGeminiConfig, KindCodexConfig:
+			action, err := buildManagedAction(target, opts)
+			if err != nil {
+				return Plan{}, err
+			}
+			actions = append(actions, action)
 		default:
 			return Plan{}, fmt.Errorf("unknown target kind: %s", target.Kind)
 		}
 	}
 
 	return Plan{Actions: actions}, nil
+}
+
+func isManagedTarget(target Target) bool {
+	return target.Kind == KindGeminiConfig || target.Kind == KindCodexConfig
 }
 
 func emptyGeminiCleanup(geminiHome string) (Action, bool) {
@@ -100,6 +111,9 @@ func buildLinkAction(target Target) (Action, error) {
 }
 
 func buildFileAction(src, dest string) Action {
+	if isSymlink(dest) {
+		return Action{Type: ActionUpdate, Source: src, Dest: dest, Note: "replace symlink"}
+	}
 	if sameFile(src, dest) {
 		return Action{Type: ActionNoop, Source: src, Dest: dest}
 	}
@@ -156,4 +170,12 @@ func sameFile(src, dest string) bool {
 		return false
 	}
 	return string(srcBytes) == string(destBytes)
+}
+
+func isSymlink(path string) bool {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return false
+	}
+	return info.Mode()&os.ModeSymlink != 0
 }

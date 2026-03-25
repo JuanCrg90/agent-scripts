@@ -148,13 +148,25 @@ func prompt(action syncer.Action) (syncer.PromptDecision, error) {
 func findMissingSources(opts syncer.Options) []string {
 	var missing []string
 	for _, target := range syncer.Targets(opts) {
-		if _, err := os.Stat(target.Source); err != nil {
-			if os.IsNotExist(err) {
-				missing = append(missing, target.Source)
+		for _, path := range targetInputs(target) {
+			if _, err := os.Stat(path); err != nil {
+				if os.IsNotExist(err) {
+					missing = append(missing, path)
+				}
 			}
 		}
 	}
 	return missing
+}
+
+func targetInputs(target syncer.Target) []string {
+	if len(target.Sources) > 0 {
+		return target.Sources
+	}
+	if target.Source == "" {
+		return nil
+	}
+	return []string{target.Source}
 }
 
 func defaultCodexHome() string {
