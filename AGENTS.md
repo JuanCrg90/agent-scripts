@@ -93,6 +93,14 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 
 Read `~/Projects/agent-scripts/tools.md` for the full tool catalog if it exists.
 
+## RTK
+
+- RTK in workflow. Shell commands: prefer `rtk <cmd>`.
+- Examples: `rtk git status`, `rtk cargo test`, `rtk npm run build`, `rtk pytest -q`.
+- Meta: `rtk gain`, `rtk gain --history`, `rtk proxy <cmd>`.
+- Verify install: `rtk --version`, `rtk gain`, `which rtk`.
+- Use `AGENTS.md` as source of truth. Do not depend on generated `GEMINI.md` overrides.
+
 ### committer
 
 - Commit helper (PATH). Stages only listed paths; required here. Repo may also ship `./scripts/committer`.

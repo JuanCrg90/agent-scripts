@@ -33,12 +33,6 @@ func Targets(opts Options) []Target {
 			Kind:   KindFile,
 		},
 		{
-			Name:   "gemini-context",
-			Source: filepath.Join(base, "AGENTS.md"),
-			Dest:   filepath.Join(opts.GeminiHome, "GEMINI.md"),
-			Kind:   KindFile,
-		},
-		{
 			Name:   "gemini-settings",
 			Source: "gemini/settings.base.json + config/mcp/servers.json",
 			Sources: []string{

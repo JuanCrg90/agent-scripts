@@ -79,11 +79,16 @@ bin/agent-sync sync --symlink
 
 ### What syncs
 
-- `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`
+- `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`
 - `gemini/settings.base.json` + `config/mcp/servers.json` → rendered `~/.gemini/settings.json`
 - `config/mcp/servers.json` → managed MCP block in `~/.codex/config.toml`
 - `skills/` → `~/.codex/skills`, `~/.gemini/antigravity/skills`
 - `scripts/commiter` → `~/.codex/scripts/commiter`
+
+### RTK
+
+RTK guidance now lives in repo `AGENTS.md`, so `agent-sync` keeps it in both Codex and Gemini without writing `~/.gemini/GEMINI.md`.
+That avoids deleting RTK-managed Gemini overrides while keeping `AGENTS.md` as the shared source of truth.
 
 ### Shared MCP workflow
 

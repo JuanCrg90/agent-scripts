@@ -119,7 +119,7 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	codexHome := filepath.Join(baseDir, "codex-home")
 	geminiHome := filepath.Join(baseDir, "gemini-home")
 
-	writeFixture(t, filepath.Join(baseDir, "AGENTS.md"), "# agents\n")
+	writeFixture(t, filepath.Join(baseDir, "AGENTS.md"), "# agents\n## RTK\n- RTK in workflow.\n")
 	writeFixture(t, filepath.Join(baseDir, "gemini", "settings.base.json"), `{
   "context": {"fileName": "AGENTS.md"}
 }`)
@@ -164,6 +164,11 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	}
 	if !strings.Contains(codexConfig, `model = "gpt-5.4"`) {
 		t.Fatalf("expected existing Codex settings to remain: %s", codexConfig)
+	}
+
+	geminiAgents := readFile(t, filepath.Join(geminiHome, "AGENTS.md"))
+	if !strings.Contains(geminiAgents, "RTK in workflow") {
+		t.Fatalf("expected synced AGENTS.md to carry RTK guidance: %s", geminiAgents)
 	}
 }
 
@@ -229,6 +234,51 @@ func TestBuildPlanReplacesSymlinkedManagedFile(t *testing.T) {
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
 		t.Fatalf("expected settings.json symlink to be replaced with regular file")
+	}
+}
+
+func TestBuildPlanLeavesExistingGeminiOverrideAlone(t *testing.T) {
+	baseDir := t.TempDir()
+	codexHome := filepath.Join(baseDir, "codex-home")
+	geminiHome := filepath.Join(baseDir, "gemini-home")
+
+	writeFixture(t, filepath.Join(baseDir, "AGENTS.md"), "# agents\n## RTK\n- RTK in workflow.\n")
+	writeFixture(t, filepath.Join(baseDir, "gemini", "settings.base.json"), `{
+  "context": {"fileName": "AGENTS.md"}
+}`)
+	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
+  "mcpServers": {}
+}`)
+	writeFixture(t, filepath.Join(baseDir, "skills", "demo", "SKILL.md"), "# skill\n")
+	writeFixture(t, filepath.Join(baseDir, "scripts", "commiter"), "#!/bin/sh\n")
+	writeFixture(t, filepath.Join(geminiHome, "GEMINI.md"), "# external rtk override\n")
+
+	opts := Options{
+		BaseDir:    baseDir,
+		CodexHome:  codexHome,
+		GeminiHome: geminiHome,
+	}
+
+	plan, err := BuildPlan(opts)
+	if err != nil {
+		t.Fatalf("BuildPlan returned error: %v", err)
+	}
+
+	for _, action := range plan.Actions {
+		if action.Dest == filepath.Join(geminiHome, "GEMINI.md") {
+			t.Fatalf("expected GEMINI.md override to be unmanaged, got action: %+v", action)
+		}
+	}
+
+	if err := Apply(plan, opts, func(Action) (PromptDecision, error) {
+		return DecisionYes, nil
+	}); err != nil {
+		t.Fatalf("Apply returned error: %v", err)
+	}
+
+	override := readFile(t, filepath.Join(geminiHome, "GEMINI.md"))
+	if override != "# external rtk override\n" {
+		t.Fatalf("expected GEMINI.md override to remain untouched, got: %s", override)
 	}
 }
 

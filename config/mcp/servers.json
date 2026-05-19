@@ -2,8 +2,8 @@
   "mcpServers": {
     "railsMcpServer": {
       "type": "stdio",
-      "command": "/Users/juancrg90/.rbenv/shims/rails-mcp-server",
-      "args": []
+      "command": "/Users/juancrg90/.local/share/mise/installs/ruby/3.4.6/bin/ruby",
+      "args": ["/Users/juancrg90/.local/share/mise/installs/ruby/3.4.6/bin/rails-mcp-server"]
     }
   }
 }
