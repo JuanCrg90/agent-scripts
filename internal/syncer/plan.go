@@ -53,7 +53,7 @@ func BuildPlan(opts Options) (Plan, error) {
 				return Plan{}, err
 			}
 			actions = append(actions, dirActions...)
-		case KindGeminiConfig, KindCodexConfig:
+		case KindGeminiConfig, KindCodexConfig, KindAgyMcpConfig:
 			action, err := buildManagedAction(target, opts)
 			if err != nil {
 				return Plan{}, err
@@ -68,7 +68,7 @@ func BuildPlan(opts Options) (Plan, error) {
 }
 
 func isManagedTarget(target Target) bool {
-	return target.Kind == KindGeminiConfig || target.Kind == KindCodexConfig
+	return target.Kind == KindGeminiConfig || target.Kind == KindCodexConfig || target.Kind == KindAgyMcpConfig
 }
 
 func emptyGeminiCleanup(geminiHome string) (Action, bool) {

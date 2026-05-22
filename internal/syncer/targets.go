@@ -15,6 +15,7 @@ const (
 	KindDir          = "dir"
 	KindGeminiConfig = "gemini-config"
 	KindCodexConfig  = "codex-config"
+	KindAgyMcpConfig = "agy-mcp-config"
 )
 
 func Targets(opts Options) []Target {
@@ -58,10 +59,25 @@ func Targets(opts Options) []Target {
 			Kind:   KindDir,
 		},
 		{
+			Name:   "agents-antigravity",
+			Source: filepath.Join(base, "AGENTS.md"),
+			Dest:   filepath.Join(opts.AntigravityHome, "AGENTS.md"),
+			Kind:   KindFile,
+		},
+		{
 			Name:   "skills-antigravity",
 			Source: filepath.Join(base, "skills"),
-			Dest:   filepath.Join(opts.GeminiHome, "antigravity", "skills"),
+			Dest:   filepath.Join(opts.AntigravityHome, "skills"),
 			Kind:   KindDir,
+		},
+		{
+			Name:   "antigravity-mcp",
+			Source: "config/mcp/servers.json",
+			Sources: []string{
+				filepath.Join(base, "config", "mcp", "servers.json"),
+			},
+			Dest: filepath.Join(opts.AntigravityHome, "mcp_config.json"),
+			Kind: KindAgyMcpConfig,
 		},
 		{
 			Name:   "commiter",

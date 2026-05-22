@@ -54,6 +54,57 @@ func TestRenderGeminiSettings(t *testing.T) {
 	}
 }
 
+func TestRenderAgyMcpConfig(t *testing.T) {
+	baseDir := t.TempDir()
+	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
+  "mcpServers": {
+    "httpServer": {
+      "type": "http",
+      "url": "http://localhost:8080/sse"
+    },
+    "stdioServer": {
+      "type": "stdio",
+      "command": "/bin/echo",
+      "args": ["one"],
+      "env": {"FOO": "bar"}
+    }
+  }
+}`)
+
+	rendered, err := RenderAgyMcpConfig(baseDir)
+	if err != nil {
+		t.Fatalf("RenderAgyMcpConfig returned error: %v", err)
+	}
+
+	var config map[string]any
+	if err := json.Unmarshal(rendered, &config); err != nil {
+		t.Fatalf("json.Unmarshal returned error: %v", err)
+	}
+
+	mcpServers, ok := config["mcpServers"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected mcpServers map, got %T", config["mcpServers"])
+	}
+
+	httpServer, ok := mcpServers["httpServer"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected httpServer entry, got %v", mcpServers["httpServer"])
+	}
+
+	if httpServer["serverUrl"] != "http://localhost:8080/sse" {
+		t.Fatalf("expected serverUrl to match manifest, got %v", httpServer["serverUrl"])
+	}
+
+	stdioServer, ok := mcpServers["stdioServer"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected stdioServer entry, got %v", mcpServers["stdioServer"])
+	}
+
+	if stdioServer["command"] != "/bin/echo" {
+		t.Fatalf("expected command to match manifest, got %v", stdioServer["command"])
+	}
+}
+
 func TestRenderCodexConfigReplacesManagedBlock(t *testing.T) {
 	baseDir := t.TempDir()
 	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
@@ -137,9 +188,10 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	writeFixture(t, filepath.Join(codexHome, "config.toml"), "model = \"gpt-5.4\"\n")
 
 	opts := Options{
-		BaseDir:    baseDir,
-		CodexHome:  codexHome,
-		GeminiHome: geminiHome,
+		BaseDir:         baseDir,
+		CodexHome:       codexHome,
+		GeminiHome:      geminiHome,
+		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
 	}
 
 	plan, err := BuildPlan(opts)
@@ -202,9 +254,10 @@ func TestBuildPlanReplacesSymlinkedManagedFile(t *testing.T) {
 	}
 
 	opts := Options{
-		BaseDir:    baseDir,
-		CodexHome:  codexHome,
-		GeminiHome: geminiHome,
+		BaseDir:         baseDir,
+		CodexHome:       codexHome,
+		GeminiHome:      geminiHome,
+		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
 	}
 
 	plan, err := BuildPlan(opts)
@@ -254,9 +307,10 @@ func TestBuildPlanLeavesExistingGeminiOverrideAlone(t *testing.T) {
 	writeFixture(t, filepath.Join(geminiHome, "GEMINI.md"), "# external rtk override\n")
 
 	opts := Options{
-		BaseDir:    baseDir,
-		CodexHome:  codexHome,
-		GeminiHome: geminiHome,
+		BaseDir:         baseDir,
+		CodexHome:       codexHome,
+		GeminiHome:      geminiHome,
+		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
 	}
 
 	plan, err := BuildPlan(opts)

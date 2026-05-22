@@ -63,6 +63,40 @@ func RenderGeminiSettings(baseDir string) ([]byte, error) {
 	return append(rendered, '\n'), nil
 }
 
+func RenderAgyMcpConfig(baseDir string) ([]byte, error) {
+	manifestPath := filepath.Join(baseDir, "config", "mcp", "servers.json")
+	manifest, err := readManifest(manifestPath)
+	if err != nil {
+		return nil, err
+	}
+
+	mcpServers := make(map[string]any, len(manifest.Servers))
+	for name, server := range manifest.Servers {
+		entry := make(map[string]any)
+		switch server.kind() {
+		case "stdio":
+			entry["command"] = server.Command
+			entry["args"] = server.ArgsOrEmpty()
+			if len(server.Env) > 0 {
+				entry["env"] = server.Env
+			}
+		case "http":
+			entry["serverUrl"] = server.URL
+		}
+		mcpServers[name] = entry
+	}
+
+	config := map[string]any{
+		"mcpServers": mcpServers,
+	}
+
+	rendered, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return append(rendered, '\n'), nil
+}
+
 func RenderCodexConfig(baseDir string, existing []byte) ([]byte, error) {
 	manifestPath := filepath.Join(baseDir, "config", "mcp", "servers.json")
 	manifest, err := readManifest(manifestPath)
@@ -253,6 +287,8 @@ func buildManagedAction(target Target, opts Options) (Action, error) {
 	switch target.Kind {
 	case KindGeminiConfig:
 		rendered, err = RenderGeminiSettings(opts.BaseDir)
+	case KindAgyMcpConfig:
+		rendered, err = RenderAgyMcpConfig(opts.BaseDir)
 	case KindCodexConfig:
 		existing, readErr := os.ReadFile(target.Dest)
 		if readErr != nil && !os.IsNotExist(readErr) {

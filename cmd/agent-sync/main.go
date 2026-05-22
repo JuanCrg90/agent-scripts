@@ -29,14 +29,16 @@ func main() {
 	base := fs.String("base", baseDefault, "Base directory for agent-scripts")
 	codexHome := fs.String("codex-home", defaultCodexHome(), "Codex home directory")
 	geminiHome := fs.String("gemini-home", "~/.gemini", "Gemini home directory")
+	antigravityHome := fs.String("antigravity-home", "~/.gemini/antigravity-cli", "Antigravity CLI home directory")
 	useSymlink := fs.Bool("symlink", false, "Use symlinks instead of copying (single source of truth, but links can break if moved)")
 	fs.Parse(os.Args[2:])
 
 	opts := syncer.Options{
-		BaseDir:    expandPath(*base),
-		CodexHome:  expandPath(*codexHome),
-		GeminiHome: expandPath(*geminiHome),
-		UseSymlink: *useSymlink,
+		BaseDir:         expandPath(*base),
+		CodexHome:       expandPath(*codexHome),
+		GeminiHome:      expandPath(*geminiHome),
+		AntigravityHome: expandPath(*antigravityHome),
+		UseSymlink:      *useSymlink,
 	}
 
 	switch command {
@@ -65,6 +67,7 @@ func usage() {
 	fmt.Println("  --base <path>        Base directory (default: ~/Projects/agent-scripts)")
 	fmt.Println("  --codex-home <path>  Codex home (default: $CODEX_HOME or ~/.codex)")
 	fmt.Println("  --gemini-home <path> Gemini home (default: ~/.gemini)")
+	fmt.Println("  --antigravity-home <path> Antigravity CLI home (default: ~/.gemini/antigravity-cli)")
 	fmt.Println("  --symlink            Use symlinks instead of copying. Pros: always in sync. Cons: links can break if you move the repo; some tools dislike symlinks.")
 }
 
@@ -105,7 +108,7 @@ func runInit(opts syncer.Options) {
 	if err := os.MkdirAll(opts.GeminiHome, 0o755); err != nil {
 		fatal(err)
 	}
-	if err := os.MkdirAll(filepath.Join(opts.GeminiHome, "antigravity"), 0o755); err != nil {
+	if err := os.MkdirAll(opts.AntigravityHome, 0o755); err != nil {
 		fatal(err)
 	}
 	runSync(opts)
