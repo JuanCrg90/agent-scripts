@@ -30,6 +30,7 @@ func main() {
 	codexHome := fs.String("codex-home", defaultCodexHome(), "Codex home directory")
 	geminiHome := fs.String("gemini-home", "~/.gemini", "Gemini home directory")
 	antigravityHome := fs.String("antigravity-home", "~/.gemini/antigravity-cli", "Antigravity CLI home directory")
+	opencodeHome := fs.String("opencode-home", "~/.config/opencode", "OpenCode config directory")
 	useSymlink := fs.Bool("symlink", false, "Use symlinks instead of copying (single source of truth, but links can break if moved)")
 	fs.Parse(os.Args[2:])
 
@@ -38,6 +39,7 @@ func main() {
 		CodexHome:       expandPath(*codexHome),
 		GeminiHome:      expandPath(*geminiHome),
 		AntigravityHome: expandPath(*antigravityHome),
+		OpenCodeHome:    expandPath(*opencodeHome),
 		UseSymlink:      *useSymlink,
 	}
 
@@ -68,6 +70,7 @@ func usage() {
 	fmt.Println("  --codex-home <path>  Codex home (default: $CODEX_HOME or ~/.codex)")
 	fmt.Println("  --gemini-home <path> Gemini home (default: ~/.gemini)")
 	fmt.Println("  --antigravity-home <path> Antigravity CLI home (default: ~/.gemini/antigravity-cli)")
+	fmt.Println("  --opencode-home <path> OpenCode config dir (default: ~/.config/opencode)")
 	fmt.Println("  --symlink            Use symlinks instead of copying. Pros: always in sync. Cons: links can break if you move the repo; some tools dislike symlinks.")
 }
 
@@ -109,6 +112,9 @@ func runInit(opts syncer.Options) {
 		fatal(err)
 	}
 	if err := os.MkdirAll(opts.AntigravityHome, 0o755); err != nil {
+		fatal(err)
+	}
+	if err := os.MkdirAll(opts.OpenCodeHome, 0o755); err != nil {
 		fatal(err)
 	}
 	runSync(opts)

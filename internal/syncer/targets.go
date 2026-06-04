@@ -11,11 +11,12 @@ type Target struct {
 }
 
 const (
-	KindFile         = "file"
-	KindDir          = "dir"
-	KindGeminiConfig = "gemini-config"
-	KindCodexConfig  = "codex-config"
-	KindAgyMcpConfig = "agy-mcp-config"
+	KindFile           = "file"
+	KindDir            = "dir"
+	KindGeminiConfig   = "gemini-config"
+	KindCodexConfig    = "codex-config"
+	KindAgyMcpConfig   = "agy-mcp-config"
+	KindOpenCodeConfig = "opencode-config"
 )
 
 func Targets(opts Options) []Target {
@@ -78,6 +79,27 @@ func Targets(opts Options) []Target {
 			},
 			Dest: filepath.Join(opts.AntigravityHome, "mcp_config.json"),
 			Kind: KindAgyMcpConfig,
+		},
+		{
+			Name:   "agents-opencode",
+			Source: filepath.Join(base, "AGENTS.md"),
+			Dest:   filepath.Join(opts.OpenCodeHome, "AGENTS.md"),
+			Kind:   KindFile,
+		},
+		{
+			Name:   "skills-opencode",
+			Source: filepath.Join(base, "skills"),
+			Dest:   filepath.Join(opts.OpenCodeHome, "skills"),
+			Kind:   KindDir,
+		},
+		{
+			Name:   "opencode-mcp",
+			Source: "config/mcp/servers.json",
+			Sources: []string{
+				filepath.Join(base, "config", "mcp", "servers.json"),
+			},
+			Dest: filepath.Join(opts.OpenCodeHome, "opencode.json"),
+			Kind: KindOpenCodeConfig,
 		},
 		{
 			Name:   "commiter",

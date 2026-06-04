@@ -105,6 +105,80 @@ func TestRenderAgyMcpConfig(t *testing.T) {
 	}
 }
 
+func TestRenderOpenCodeConfigPreservesExistingSettings(t *testing.T) {
+	baseDir := t.TempDir()
+	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
+  "mcpServers": {
+    "httpServer": {
+      "type": "http",
+      "url": "http://localhost:8080/mcp"
+    },
+    "stdioServer": {
+      "type": "stdio",
+      "command": "/bin/echo",
+      "args": ["one"],
+      "env": {"FOO": "bar"}
+    }
+  }
+}`)
+
+	existing := []byte(`{
+  "model": "anthropic/claude-sonnet-4-5",
+  "mcp": {
+    "manual": {
+      "type": "remote",
+      "url": "https://example.com/mcp"
+    }
+  }
+}`)
+
+	rendered, err := RenderOpenCodeConfig(baseDir, existing)
+	if err != nil {
+		t.Fatalf("RenderOpenCodeConfig returned error: %v", err)
+	}
+
+	var config map[string]any
+	if err := json.Unmarshal(rendered, &config); err != nil {
+		t.Fatalf("json.Unmarshal returned error: %v", err)
+	}
+
+	if config["model"] != "anthropic/claude-sonnet-4-5" {
+		t.Fatalf("expected existing model to remain, got %v", config["model"])
+	}
+
+	mcpServers, ok := config["mcp"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected mcp map, got %T", config["mcp"])
+	}
+
+	stdioServer, ok := mcpServers["stdioServer"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected stdioServer entry, got %v", mcpServers["stdioServer"])
+	}
+
+	command, ok := stdioServer["command"].([]any)
+	if !ok || len(command) != 2 || command[0] != "/bin/echo" || command[1] != "one" {
+		t.Fatalf("expected OpenCode local command array, got %v", stdioServer["command"])
+	}
+
+	if stdioServer["environment"] == nil {
+		t.Fatalf("expected environment for stdio server: %v", stdioServer)
+	}
+
+	httpServer, ok := mcpServers["httpServer"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected httpServer entry, got %v", mcpServers["httpServer"])
+	}
+
+	if httpServer["type"] != "remote" || httpServer["url"] != "http://localhost:8080/mcp" {
+		t.Fatalf("expected OpenCode remote server, got %v", httpServer)
+	}
+
+	if mcpServers["manual"] == nil {
+		t.Fatalf("expected unmanaged MCP server to remain")
+	}
+}
+
 func TestRenderCodexConfigReplacesManagedBlock(t *testing.T) {
 	baseDir := t.TempDir()
 	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
@@ -169,6 +243,7 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	baseDir := t.TempDir()
 	codexHome := filepath.Join(baseDir, "codex-home")
 	geminiHome := filepath.Join(baseDir, "gemini-home")
+	opencodeHome := filepath.Join(baseDir, "opencode-home")
 
 	writeFixture(t, filepath.Join(baseDir, "AGENTS.md"), "# agents\n## RTK\n- RTK in workflow.\n")
 	writeFixture(t, filepath.Join(baseDir, "gemini", "settings.base.json"), `{
@@ -186,12 +261,16 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	writeFixture(t, filepath.Join(baseDir, "skills", "demo", "SKILL.md"), "# skill\n")
 	writeFixture(t, filepath.Join(baseDir, "scripts", "commiter"), "#!/bin/sh\n")
 	writeFixture(t, filepath.Join(codexHome, "config.toml"), "model = \"gpt-5.4\"\n")
+	writeFixture(t, filepath.Join(opencodeHome, "opencode.json"), `{
+  "model": "anthropic/claude-sonnet-4-5"
+}`)
 
 	opts := Options{
 		BaseDir:         baseDir,
 		CodexHome:       codexHome,
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
+		OpenCodeHome:    opencodeHome,
 	}
 
 	plan, err := BuildPlan(opts)
@@ -221,6 +300,19 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	geminiAgents := readFile(t, filepath.Join(geminiHome, "AGENTS.md"))
 	if !strings.Contains(geminiAgents, "RTK in workflow") {
 		t.Fatalf("expected synced AGENTS.md to carry RTK guidance: %s", geminiAgents)
+	}
+
+	opencodeAgents := readFile(t, filepath.Join(opencodeHome, "AGENTS.md"))
+	if !strings.Contains(opencodeAgents, "RTK in workflow") {
+		t.Fatalf("expected synced OpenCode AGENTS.md to carry RTK guidance: %s", opencodeAgents)
+	}
+
+	opencodeConfig := readFile(t, filepath.Join(opencodeHome, "opencode.json"))
+	if !strings.Contains(opencodeConfig, `"mcp"`) {
+		t.Fatalf("expected rendered OpenCode MCP config: %s", opencodeConfig)
+	}
+	if !strings.Contains(opencodeConfig, `"model": "anthropic/claude-sonnet-4-5"`) {
+		t.Fatalf("expected existing OpenCode settings to remain: %s", opencodeConfig)
 	}
 }
 
@@ -258,6 +350,7 @@ func TestBuildPlanReplacesSymlinkedManagedFile(t *testing.T) {
 		CodexHome:       codexHome,
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
+		OpenCodeHome:    filepath.Join(baseDir, "opencode-home"),
 	}
 
 	plan, err := BuildPlan(opts)
@@ -311,6 +404,7 @@ func TestBuildPlanLeavesExistingGeminiOverrideAlone(t *testing.T) {
 		CodexHome:       codexHome,
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
+		OpenCodeHome:    filepath.Join(baseDir, "opencode-home"),
 	}
 
 	plan, err := BuildPlan(opts)

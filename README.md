@@ -1,7 +1,7 @@
 # Agent Skills Hub
 
-My source of truth for using agent skills with Codex, Claude, and Gemini.
-MCP server definitions live here once and sync to both Gemini and Codex.
+My source of truth for using agent skills with Codex, Claude, Gemini, Antigravity, and OpenCode.
+MCP server definitions live here once and sync to supported harness configs.
 
 ## Purpose
 
@@ -24,7 +24,7 @@ MCP server definitions live here once and sync to both Gemini and Codex.
 
 ## Sync CLI
 
-The `agent-sync` Go CLI keeps Codex, Gemini CLI, and Antigravity in sync with this repo.
+The `agent-sync` Go CLI keeps Codex, Gemini CLI, Antigravity, and OpenCode in sync with this repo.
 
 ### Build
 
@@ -57,18 +57,22 @@ Command meaning:
 - Base: `~/Projects/agent-scripts`
 - Codex home: `$CODEX_HOME` or `~/.codex`
 - Gemini home: `~/.gemini`
+- Antigravity home: `~/.gemini/antigravity-cli`
+- OpenCode config dir: `~/.config/opencode`
 
 ### Flags
 
 - `--base <path>` override repo base
 - `--codex-home <path>` override Codex home
 - `--gemini-home <path>` override Gemini home
+- `--antigravity-home <path>` override Antigravity CLI home
+- `--opencode-home <path>` override OpenCode config dir
 - `--symlink` use symlinks instead of copying (always in sync, but links break if you move the repo and some tools dislike symlinks)
 
 Example with flags:
 
 ```sh
-bin/agent-sync sync --base ~/Projects/agent-scripts --codex-home ~/.codex --gemini-home ~/.gemini
+bin/agent-sync sync --base ~/Projects/agent-scripts --codex-home ~/.codex --gemini-home ~/.gemini --opencode-home ~/.config/opencode
 ```
 
 Symlink mode:
@@ -82,7 +86,10 @@ bin/agent-sync sync --symlink
 - `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`
 - `gemini/settings.base.json` + `config/mcp/servers.json` → rendered `~/.gemini/settings.json`
 - `config/mcp/servers.json` → managed MCP block in `~/.codex/config.toml`
+- `AGENTS.md` → `~/.config/opencode/AGENTS.md`
+- `config/mcp/servers.json` → merged `mcp` entries in `~/.config/opencode/opencode.json`
 - `skills/` → `~/.codex/skills`, `~/.gemini/antigravity/skills`
+- `skills/` → `~/.config/opencode/skills`
 - `scripts/commiter` → `~/.codex/scripts/commiter`
 
 ### RTK
@@ -111,6 +118,9 @@ jq '.mcpServers' ~/.gemini/settings.json
 
 Codex MCP config is merged into a managed block inside `~/.codex/config.toml`.
 Leave other Codex settings outside that block so local model/trust config stays intact.
+
+OpenCode MCP config is merged into `~/.config/opencode/opencode.json` under `mcp`.
+Existing non-MCP settings and unrelated MCP server names are preserved; server names from `config/mcp/servers.json` are refreshed from the shared manifest.
 
 ## Acknowledgment
 

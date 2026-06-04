@@ -97,6 +97,40 @@ func RenderAgyMcpConfig(baseDir string) ([]byte, error) {
 	return append(rendered, '\n'), nil
 }
 
+func RenderOpenCodeConfig(baseDir string, existing []byte) ([]byte, error) {
+	manifestPath := filepath.Join(baseDir, "config", "mcp", "servers.json")
+	manifest, err := readManifest(manifestPath)
+	if err != nil {
+		return nil, err
+	}
+
+	config := map[string]any{}
+	if len(bytes.TrimSpace(existing)) > 0 {
+		if err := json.Unmarshal(existing, &config); err != nil {
+			return nil, fmt.Errorf("parse OpenCode config: %w", err)
+		}
+	}
+	if _, ok := config["$schema"]; !ok {
+		config["$schema"] = "https://opencode.ai/config.json"
+	}
+
+	mcpServers := existingOpenCodeMCP(config["mcp"])
+	for name, server := range manifest.Servers {
+		entry, err := server.openCodeEntry()
+		if err != nil {
+			return nil, fmt.Errorf("render OpenCode MCP server %s: %w", name, err)
+		}
+		mcpServers[name] = entry
+	}
+	config["mcp"] = mcpServers
+
+	rendered, err := json.MarshalIndent(config, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+	return append(rendered, '\n'), nil
+}
+
 func RenderCodexConfig(baseDir string, existing []byte) ([]byte, error) {
 	manifestPath := filepath.Join(baseDir, "config", "mcp", "servers.json")
 	manifest, err := readManifest(manifestPath)
@@ -190,11 +224,42 @@ func (server MCPServer) geminiEntry() (map[string]any, error) {
 	}
 }
 
+func (server MCPServer) openCodeEntry() (map[string]any, error) {
+	switch server.kind() {
+	case "stdio":
+		entry := map[string]any{
+			"type":    "local",
+			"command": append([]string{server.Command}, server.ArgsOrEmpty()...),
+			"enabled": true,
+		}
+		if len(server.Env) > 0 {
+			entry["environment"] = server.Env
+		}
+		return entry, nil
+	case "http":
+		return map[string]any{
+			"type":    "remote",
+			"url":     server.URL,
+			"enabled": true,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported type %q", server.Type)
+	}
+}
+
 func (server MCPServer) ArgsOrEmpty() []string {
 	if server.Args == nil {
 		return []string{}
 	}
 	return server.Args
+}
+
+func existingOpenCodeMCP(value any) map[string]any {
+	existing, ok := value.(map[string]any)
+	if !ok {
+		return map[string]any{}
+	}
+	return existing
 }
 
 func renderCodexManagedBlock(manifest manifestFile) (string, error) {
@@ -295,6 +360,12 @@ func buildManagedAction(target Target, opts Options) (Action, error) {
 			return Action{}, readErr
 		}
 		rendered, err = RenderCodexConfig(opts.BaseDir, existing)
+	case KindOpenCodeConfig:
+		existing, readErr := os.ReadFile(target.Dest)
+		if readErr != nil && !os.IsNotExist(readErr) {
+			return Action{}, readErr
+		}
+		rendered, err = RenderOpenCodeConfig(opts.BaseDir, existing)
 	default:
 		return Action{}, fmt.Errorf("unknown managed target kind: %s", target.Kind)
 	}

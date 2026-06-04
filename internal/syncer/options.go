@@ -5,5 +5,6 @@ type Options struct {
 	CodexHome       string
 	GeminiHome      string
 	AntigravityHome string
+	OpenCodeHome    string
 	UseSymlink      bool
 }
