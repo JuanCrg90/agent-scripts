@@ -101,6 +101,7 @@ That avoids deleting RTK-managed Gemini overrides while keeping `AGENTS.md` as t
 
 Edit shared servers in `config/mcp/servers.json`.
 Keep Gemini-only non-MCP settings in `gemini/settings.base.json`.
+Remote MCP servers can include `"httpHeaders"` for committed static headers and `"httpHeadersEnv"` for local-only secrets loaded from environment variables during sync.
 
 Then review and apply:
 

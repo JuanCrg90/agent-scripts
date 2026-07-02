@@ -10,6 +10,7 @@ import (
 
 func TestRenderGeminiSettings(t *testing.T) {
 	baseDir := t.TempDir()
+	t.Setenv("STITCH_API_KEY", "test-key")
 	writeFixture(t, filepath.Join(baseDir, "gemini", "settings.base.json"), `{
   "context": {"fileName": "AGENTS.md"},
   "general": {"previewFeatures": true}
@@ -21,6 +22,11 @@ func TestRenderGeminiSettings(t *testing.T) {
       "command": "/bin/echo",
       "args": ["one"],
       "env": {"FOO": "bar"}
+    },
+    "stitch": {
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "httpHeadersEnv": {"X-Goog-Api-Key": "STITCH_API_KEY"}
     }
   }
 }`)
@@ -52,15 +58,27 @@ func TestRenderGeminiSettings(t *testing.T) {
 	if echo["command"] != "/bin/echo" {
 		t.Fatalf("expected command to match manifest, got %v", echo["command"])
 	}
+
+	stitch, ok := mcpServers["stitch"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected stitch server entry, got %T", mcpServers["stitch"])
+	}
+
+	headers, ok := stitch["httpHeaders"].(map[string]any)
+	if !ok || headers["X-Goog-Api-Key"] != "test-key" {
+		t.Fatalf("expected remote httpHeaders, got %v", stitch["httpHeaders"])
+	}
 }
 
 func TestRenderAgyMcpConfig(t *testing.T) {
 	baseDir := t.TempDir()
+	t.Setenv("AUTH_TOKEN", "Bearer token")
 	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
   "mcpServers": {
     "httpServer": {
       "type": "http",
-      "url": "http://localhost:8080/sse"
+      "url": "http://localhost:8080/sse",
+      "httpHeadersEnv": {"Authorization": "AUTH_TOKEN"}
     },
     "stdioServer": {
       "type": "stdio",
@@ -94,6 +112,10 @@ func TestRenderAgyMcpConfig(t *testing.T) {
 	if httpServer["serverUrl"] != "http://localhost:8080/sse" {
 		t.Fatalf("expected serverUrl to match manifest, got %v", httpServer["serverUrl"])
 	}
+	headers, ok := httpServer["headers"].(map[string]any)
+	if !ok || headers["Authorization"] != "Bearer token" {
+		t.Fatalf("expected headers to match manifest, got %v", httpServer["headers"])
+	}
 
 	stdioServer, ok := mcpServers["stdioServer"].(map[string]any)
 	if !ok {
@@ -107,11 +129,13 @@ func TestRenderAgyMcpConfig(t *testing.T) {
 
 func TestRenderOpenCodeConfigPreservesExistingSettings(t *testing.T) {
 	baseDir := t.TempDir()
+	t.Setenv("TEST_HEADER", "abc")
 	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
   "mcpServers": {
     "httpServer": {
       "type": "http",
-      "url": "http://localhost:8080/mcp"
+      "url": "http://localhost:8080/mcp",
+      "httpHeadersEnv": {"X-Test": "TEST_HEADER"}
     },
     "stdioServer": {
       "type": "stdio",
@@ -173,6 +197,10 @@ func TestRenderOpenCodeConfigPreservesExistingSettings(t *testing.T) {
 	if httpServer["type"] != "remote" || httpServer["url"] != "http://localhost:8080/mcp" {
 		t.Fatalf("expected OpenCode remote server, got %v", httpServer)
 	}
+	headers, ok := httpServer["headers"].(map[string]any)
+	if !ok || headers["X-Test"] != "abc" {
+		t.Fatalf("expected OpenCode headers, got %v", httpServer["headers"])
+	}
 
 	if mcpServers["manual"] == nil {
 		t.Fatalf("expected unmanaged MCP server to remain")
@@ -181,6 +209,7 @@ func TestRenderOpenCodeConfigPreservesExistingSettings(t *testing.T) {
 
 func TestRenderCodexConfigReplacesManagedBlock(t *testing.T) {
 	baseDir := t.TempDir()
+	t.Setenv("STITCH_API_KEY", "test-key")
 	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
   "mcpServers": {
     "echo": {
@@ -188,6 +217,11 @@ func TestRenderCodexConfigReplacesManagedBlock(t *testing.T) {
       "command": "/bin/echo",
       "args": ["one", "two"],
       "env": {"FOO": "bar"}
+    },
+    "stitch": {
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "httpHeadersEnv": {"X-Goog-Api-Key": "STITCH_API_KEY"}
     }
   }
 }`)
@@ -219,6 +253,33 @@ func TestRenderCodexConfigReplacesManagedBlock(t *testing.T) {
 	}
 	if !strings.Contains(output, `[mcp_servers.echo.env]`) {
 		t.Fatalf("expected env table for managed server: %s", output)
+	}
+	if !strings.Contains(output, "[mcp_servers.stitch.http_headers]") {
+		t.Fatalf("expected http_headers table for remote server: %s", output)
+	}
+	if !strings.Contains(output, `"X-Goog-Api-Key" = "test-key"`) {
+		t.Fatalf("expected resolved env-backed header value: %s", output)
+	}
+}
+
+func TestRenderGeminiSettingsErrorsWhenHeaderEnvMissing(t *testing.T) {
+	baseDir := t.TempDir()
+	writeFixture(t, filepath.Join(baseDir, "gemini", "settings.base.json"), `{
+  "context": {"fileName": "AGENTS.md"}
+}`)
+	writeFixture(t, filepath.Join(baseDir, "config", "mcp", "servers.json"), `{
+  "mcpServers": {
+    "stitch": {
+      "type": "http",
+      "url": "https://stitch.googleapis.com/mcp",
+      "httpHeadersEnv": {"X-Goog-Api-Key": "MISSING_STITCH_API_KEY"}
+    }
+  }
+}`)
+
+	_, err := RenderGeminiSettings(baseDir)
+	if err == nil || !strings.Contains(err.Error(), "MISSING_STITCH_API_KEY") {
+		t.Fatalf("expected missing env var error, got %v", err)
 	}
 }
 

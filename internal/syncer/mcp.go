@@ -20,11 +20,13 @@ type manifestFile struct {
 }
 
 type MCPServer struct {
-	Type    string            `json:"type,omitempty"`
-	Command string            `json:"command,omitempty"`
-	Args    []string          `json:"args,omitempty"`
-	Env     map[string]string `json:"env,omitempty"`
-	URL     string            `json:"url,omitempty"`
+	Type           string            `json:"type,omitempty"`
+	Command        string            `json:"command,omitempty"`
+	Args           []string          `json:"args,omitempty"`
+	Env            map[string]string `json:"env,omitempty"`
+	URL            string            `json:"url,omitempty"`
+	HTTPHeaders    map[string]string `json:"httpHeaders,omitempty"`
+	HTTPHeadersEnv map[string]string `json:"httpHeadersEnv,omitempty"`
 }
 
 func RenderGeminiSettings(baseDir string) ([]byte, error) {
@@ -81,7 +83,14 @@ func RenderAgyMcpConfig(baseDir string) ([]byte, error) {
 				entry["env"] = server.Env
 			}
 		case "http":
+			headers, err := server.resolvedHTTPHeaders()
+			if err != nil {
+				return nil, fmt.Errorf("render Antigravity MCP server %s: %w", name, err)
+			}
 			entry["serverUrl"] = server.URL
+			if len(headers) > 0 {
+				entry["headers"] = headers
+			}
 		}
 		mcpServers[name] = entry
 	}
@@ -218,7 +227,15 @@ func (server MCPServer) geminiEntry() (map[string]any, error) {
 		}
 		return entry, nil
 	case "http":
-		return map[string]any{"url": server.URL}, nil
+		entry := map[string]any{"url": server.URL}
+		headers, err := server.resolvedHTTPHeaders()
+		if err != nil {
+			return nil, err
+		}
+		if len(headers) > 0 {
+			entry["httpHeaders"] = headers
+		}
+		return entry, nil
 	default:
 		return nil, fmt.Errorf("unsupported type %q", server.Type)
 	}
@@ -237,11 +254,19 @@ func (server MCPServer) openCodeEntry() (map[string]any, error) {
 		}
 		return entry, nil
 	case "http":
-		return map[string]any{
+		headers, err := server.resolvedHTTPHeaders()
+		if err != nil {
+			return nil, err
+		}
+		entry := map[string]any{
 			"type":    "remote",
 			"url":     server.URL,
 			"enabled": true,
-		}, nil
+		}
+		if len(headers) > 0 {
+			entry["headers"] = headers
+		}
+		return entry, nil
 	default:
 		return nil, fmt.Errorf("unsupported type %q", server.Type)
 	}
@@ -252,6 +277,21 @@ func (server MCPServer) ArgsOrEmpty() []string {
 		return []string{}
 	}
 	return server.Args
+}
+
+func (server MCPServer) resolvedHTTPHeaders() (map[string]string, error) {
+	headers := map[string]string{}
+	for key, value := range server.HTTPHeaders {
+		headers[key] = value
+	}
+	for key, envName := range server.HTTPHeadersEnv {
+		value, ok := os.LookupEnv(envName)
+		if !ok || value == "" {
+			return nil, fmt.Errorf("http header %s requires env var %s", key, envName)
+		}
+		headers[key] = value
+	}
+	return headers, nil
 }
 
 func existingOpenCodeMCP(value any) map[string]any {
@@ -292,8 +332,19 @@ func renderCodexManagedBlock(manifest manifestFile) (string, error) {
 				}
 			}
 		case "http":
+			headers, err := server.resolvedHTTPHeaders()
+			if err != nil {
+				return "", err
+			}
 			b.WriteString(fmt.Sprintf("[mcp_servers.%s]\n", name))
 			b.WriteString(fmt.Sprintf("url = %s\n", tomlString(server.URL)))
+			if len(headers) > 0 {
+				b.WriteString("\n")
+				b.WriteString(fmt.Sprintf("[mcp_servers.%s.http_headers]\n", name))
+				for _, key := range sortedKeys(headers) {
+					b.WriteString(fmt.Sprintf("%s = %s\n", tomlString(key), tomlString(headers[key])))
+				}
+			}
 		default:
 			return "", fmt.Errorf("unsupported type %q", server.Type)
 		}
@@ -309,7 +360,8 @@ func ensureNoCodexConflicts(config string, manifest manifestFile) error {
 	for _, name := range sortedServerNames(manifest.Servers) {
 		header := fmt.Sprintf("[mcp_servers.%s]", name)
 		envHeader := fmt.Sprintf("[mcp_servers.%s.env]", name)
-		if strings.Contains(config, header) || strings.Contains(config, envHeader) {
+		headersHeader := fmt.Sprintf("[mcp_servers.%s.http_headers]", name)
+		if strings.Contains(config, header) || strings.Contains(config, envHeader) || strings.Contains(config, headersHeader) {
 			return fmt.Errorf("codex config already defines managed MCP server %s outside the agent-sync block", name)
 		}
 	}
