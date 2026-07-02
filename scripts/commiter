@@ -4,42 +4,109 @@ set -euo pipefail
 # Disable glob expansion to handle brackets in file paths
 set -f
 usage() {
-  printf 'Usage: %s [--force] "commit message" "file" ["file" ...]\n' "$(basename "$0")" >&2
+  cat >&2 <<EOF
+Usage: $(basename "$0") [-m message] [--force] [--dry-run] [--no-verify] "file" ["file" ...]
+
+Options:
+  -m message       Commit message (required, unless using --dry-run)
+                     First line is subject (validated). Rest is body.
+  --force          Auto-remove stale .git/index.lock
+  --dry-run        Stage files and show diff without committing
+  --no-verify      Skip conventional commit validation
+
+Examples:
+  $(basename "$0") -m "feat: add login" auth.rb
+  $(basename "$0") -m "feat: add login
+
+Implement JWT auth with refresh tokens" auth.rb
+  $(basename "$0") -m "fix: resolve deadlock" --force app/db.rb
+  $(basename "$0") -m "feat: add login" --dry-run auth.rb
+EOF
   exit 2
 }
 
-if [ "$#" -lt 2 ]; then
-  usage
-fi
-
+commit_message=""
+commit_subject=""
 force_delete_lock=false
-if [ "${1:-}" = "--force" ]; then
-  force_delete_lock=true
-  shift
-fi
+dry_run=false
+no_verify=false
 
-if [ "$#" -lt 2 ]; then
+# Parse options
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -m)
+      if [ $# -lt 2 ]; then
+        printf 'Error: -m requires a message argument\n' >&2
+        exit 2
+      fi
+      commit_message="$2"
+      shift 2
+      ;;
+    --force)
+      force_delete_lock=true
+      shift
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    --no-verify)
+      no_verify=true
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+files=("$@")
+
+if [ ${#files[@]} -eq 0 ] && [ -z "$commit_message" ] && [ "$dry_run" = false ]; then
   usage
 fi
 
-commit_message=$1
-shift
+if [ -z "$commit_message" ] && [ "$dry_run" = false ]; then
+  printf 'Error: -m message is required\n' >&2
+  exit 2
+fi
 
-if [[ "$commit_message" != *[![:space:]]* ]]; then
+if [[ "$commit_message" != *[![:space:]]* ]] && [ "$dry_run" = false ]; then
   printf 'Error: commit message must not be empty\n' >&2
   exit 1
 fi
 
-if [ -e "$commit_message" ]; then
-  printf 'Error: first argument looks like a file path ("%s"); provide the commit message first\n' "$commit_message" >&2
-  exit 1
-fi
+# Validate Conventional Commits format: type(scope)?: subject
+# Types: feat|fix|refactor|build|ci|chore|style|perf|test|docs|revert
+validate_conventional_commit() {
+  if [ "$no_verify" = true ]; then
+    return 0
+  fi
+  if ! printf '%s' "$commit_message" | grep -qE '^(feat|fix|refactor|build|ci|chore|style|perf|test|docs|revert)(\([^)]+\))?:[[:space:]].+'; then
+    printf 'Error: message does not follow Conventional Commits format\n' >&2
+    printf '  Expected: type(scope): description  OR  type: description\n' >&2
+    printf '  Types: feat|fix|refactor|build|ci|chore|style|perf|test|docs|revert\n' >&2
+    printf '  Use --no-verify to skip this check\n' >&2
+    exit 1
+  fi
+}
 
-if [ "$#" -eq 0 ]; then
-  usage
-fi
+validate_conventional_commit
 
-files=("$@")
+# Extract first line (subject) for display/validation; rest is body
+commit_subject=$(printf '%s' "$commit_message" | head -n1)
+
+if [ "$dry_run" = true ]; then
+  git restore --staged :/
+  git add -A -- "${files[@]}"
+  if git diff --staged --quiet; then
+    printf 'Warning: no staged changes detected for: %s\n' "${files[*]}" >&2
+    exit 1
+  fi
+  printf 'Dry run — staged changes:\n\n'
+  git diff --staged --color=always
+  exit 0
+fi
 
 # Disallow "." because it stages the entire repository and defeats the helper's safety guardrails.
 for file in "${files[@]}"; do
@@ -54,7 +121,11 @@ last_commit_error=''
 run_git_commit() {
   local stderr_log
   stderr_log=$(mktemp)
-  if git commit -m "$commit_message" -- "${files[@]}" 2> >(tee "$stderr_log" >&2); then
+  local verify_flag=""
+  if [ "$no_verify" = true ]; then
+    verify_flag="--no-verify"
+  fi
+  if git commit $verify_flag -m "$commit_message" -- "${files[@]}" 2> >(tee "$stderr_log" >&2); then
     rm -f "$stderr_log"
     last_commit_error=''
     return 0
@@ -108,4 +179,4 @@ if [ "$committed" = false ]; then
   exit 1
 fi
 
-printf 'Committed "%s" with %d files\n' "$commit_message" "${#files[@]}"
+printf 'Committed "%s" with %d files\n' "$commit_subject" "${#files[@]}"
