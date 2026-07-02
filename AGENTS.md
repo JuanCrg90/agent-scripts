@@ -102,6 +102,10 @@ Read `~/Projects/agent-scripts/tools.md` for the full tool catalog if it exists.
 ### committer
 
 - Commit helper (PATH). Stages only listed paths; required here. Repo may also ship `./scripts/committer`.
+- Usage: `committer -m "type: subject" [--dry-run] [--force] [--no-verify] "file" ["file" ...]`
+- `-m` takes multi-line messages: first line = subject (validated), rest = body.
+- Flags: `--dry-run` (show staged diff), `--force` (remove stale git lock), `--no-verify` (skip Conventional Commits check).
+- `.` is disallowed; list specific file paths only.
 
 ### trash
 
