@@ -5,22 +5,21 @@ set -euo pipefail
 set -f
 usage() {
   cat >&2 <<EOF
-Usage: $(basename "$0") [-m message] [--force] [--dry-run] [--no-verify] "file" ["file" ...]
+Usage: $(basename "$0") [-m message] [--force] [--dry-run] "file" ["file" ...]
 
 Options:
   -m message       Commit message (required, unless using --dry-run)
-                     First line is subject (validated). Rest is body.
+                     First line is subject. Rest is body.
   --force          Auto-remove stale .git/index.lock
   --dry-run        Stage files and show diff without committing
-  --no-verify      Skip conventional commit validation
 
 Examples:
-  $(basename "$0") -m "feat: add login" auth.rb
-  $(basename "$0") -m "feat: add login
+  $(basename "$0") -m "Add login page" auth.rb
+  $(basename "$0") -m "Add login page
 
-Implement JWT auth with refresh tokens" auth.rb
-  $(basename "$0") -m "fix: resolve deadlock" --force app/db.rb
-  $(basename "$0") -m "feat: add login" --dry-run auth.rb
+Add a login page with JWT auth" auth.rb
+  $(basename "$0") -m "Fix deadlock in pool" --force app/db.rb
+  $(basename "$0") -m "Add login page" --dry-run auth.rb
 EOF
   exit 2
 }
@@ -29,7 +28,6 @@ commit_message=""
 commit_subject=""
 force_delete_lock=false
 dry_run=false
-no_verify=false
 
 # Parse options
 while [ $# -gt 0 ]; do
@@ -48,10 +46,6 @@ while [ $# -gt 0 ]; do
       ;;
     --dry-run)
       dry_run=true
-      shift
-      ;;
-    --no-verify)
-      no_verify=true
       shift
       ;;
     *)
@@ -76,24 +70,7 @@ if [[ "$commit_message" != *[![:space:]]* ]] && [ "$dry_run" = false ]; then
   exit 1
 fi
 
-# Validate Conventional Commits format: type(scope)?: subject
-# Types: feat|fix|refactor|build|ci|chore|style|perf|test|docs|revert
-validate_conventional_commit() {
-  if [ "$no_verify" = true ]; then
-    return 0
-  fi
-  if ! printf '%s' "$commit_message" | grep -qE '^(feat|fix|refactor|build|ci|chore|style|perf|test|docs|revert)(\([^)]+\))?:[[:space:]].+'; then
-    printf 'Error: message does not follow Conventional Commits format\n' >&2
-    printf '  Expected: type(scope): description  OR  type: description\n' >&2
-    printf '  Types: feat|fix|refactor|build|ci|chore|style|perf|test|docs|revert\n' >&2
-    printf '  Use --no-verify to skip this check\n' >&2
-    exit 1
-  fi
-}
-
-validate_conventional_commit
-
-# Extract first line (subject) for display/validation; rest is body
+# Extract first line (subject) for display; rest is body
 commit_subject=$(printf '%s' "$commit_message" | head -n1)
 
 if [ "$dry_run" = true ]; then
@@ -121,11 +98,7 @@ last_commit_error=''
 run_git_commit() {
   local stderr_log
   stderr_log=$(mktemp)
-  local verify_flag=""
-  if [ "$no_verify" = true ]; then
-    verify_flag="--no-verify"
-  fi
-  if git commit $verify_flag -m "$commit_message" -- "${files[@]}" 2> >(tee "$stderr_log" >&2); then
+  if git commit -m "$commit_message" -- "${files[@]}" 2> >(tee "$stderr_log" >&2); then
     rm -f "$stderr_log"
     last_commit_error=''
     return 0

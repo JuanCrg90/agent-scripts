@@ -15,7 +15,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 - Need upstream file: stage in `/tmp/`, then cherry-pick; never overwrite tracked.
 - Bugs: add regression test when it fits.
 - Keep files <~500 LOC; split/refactor as needed.
-- Commits: Conventional Commits (`feat|fix|refactor|build|ci|chore|docs|style|perf|test`).
+- Commits: Tim Pope style — capitalized, short subject (≤50 chars), imperative mood, body wrapped at 72 chars.
 - Editor: `nvim <path>`.
 - CI: `gh run list/view` (rerun/fix til green).
 - Prefer end-to-end verify; if blocked, say what’s missing.
@@ -102,10 +102,43 @@ Read `~/Projects/agent-scripts/tools.md` for the full tool catalog if it exists.
 ### committer
 
 - Commit helper (PATH). Stages only listed paths; required here. Repo may also ship `./scripts/committer`.
-- Usage: `committer -m "type: subject" [--dry-run] [--force] [--no-verify] "file" ["file" ...]`
-- `-m` takes multi-line messages: first line = subject (validated), rest = body.
-- Flags: `--dry-run` (show staged diff), `--force` (remove stale git lock), `--no-verify` (skip Conventional Commits check).
+- Usage: `committer -m "subject" [--dry-run] [--force] "file" ["file" ...]`
+- `-m` takes multi-line messages: first line = subject, rest = body.
+- Flags: `--dry-run` (show staged diff), `--force` (remove stale git lock).
 - `.` is disallowed; list specific file paths only.
+
+#### Commit message style (Tim Pope)
+
+- **Subject line:** capitalized, imperative mood, ≤50 chars.
+  - ✅ `Add login page`
+  - ❌ `Added login page`, ❌ `feat: add login`
+- **Blank line** separating subject from body (unless body is omitted).
+- **Body:** wrapped at 72 chars. Explain *what* and *why*, not *how*.
+  - More detailed explanatory text, if necessary.
+  - Further paragraphs come after blank lines.
+  - Bullet points are okay, too:
+    - Use a hyphen or asterisk, followed by a single space.
+    - Use a hanging indent.
+
+Examples:
+
+```
+Add login page
+
+Add a login page with JWT auth and refresh token rotation.
+
+- Uses the new auth service from commit abc123
+- Adds routes to config/router.ex
+```
+
+```
+Fix deadlock in database pool
+
+The connection pool was deadlocking because checkout was called
+without a timeout, blocking when all connections were in use.
+
+Wrap checkout in a timeout and add telemetry to detect future
+contention.
 
 ### trash
 
