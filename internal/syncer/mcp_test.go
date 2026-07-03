@@ -305,6 +305,7 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	codexHome := filepath.Join(baseDir, "codex-home")
 	geminiHome := filepath.Join(baseDir, "gemini-home")
 	opencodeHome := filepath.Join(baseDir, "opencode-home")
+	piHome := filepath.Join(baseDir, "pi-home")
 
 	writeFixture(t, filepath.Join(baseDir, "AGENTS.md"), "# agents\n## RTK\n- RTK in workflow.\n")
 	writeFixture(t, filepath.Join(baseDir, "gemini", "settings.base.json"), `{
@@ -332,6 +333,7 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
 		OpenCodeHome:    opencodeHome,
+		PiHome:          piHome,
 	}
 
 	plan, err := BuildPlan(opts)
@@ -366,6 +368,11 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 	opencodeAgents := readFile(t, filepath.Join(opencodeHome, "AGENTS.md"))
 	if !strings.Contains(opencodeAgents, "RTK in workflow") {
 		t.Fatalf("expected synced OpenCode AGENTS.md to carry RTK guidance: %s", opencodeAgents)
+	}
+
+	piAgents := readFile(t, filepath.Join(piHome, "AGENTS.md"))
+	if !strings.Contains(piAgents, "RTK in workflow") {
+		t.Fatalf("expected synced Pi AGENTS.md to carry RTK guidance: %s", piAgents)
 	}
 
 	opencodeConfig := readFile(t, filepath.Join(opencodeHome, "opencode.json"))
@@ -412,6 +419,7 @@ func TestBuildPlanReplacesSymlinkedManagedFile(t *testing.T) {
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
 		OpenCodeHome:    filepath.Join(baseDir, "opencode-home"),
+		PiHome:          filepath.Join(baseDir, "pi-home"),
 	}
 
 	plan, err := BuildPlan(opts)
@@ -466,6 +474,7 @@ func TestBuildPlanLeavesExistingGeminiOverrideAlone(t *testing.T) {
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
 		OpenCodeHome:    filepath.Join(baseDir, "opencode-home"),
+		PiHome:          filepath.Join(baseDir, "pi-home"),
 	}
 
 	plan, err := BuildPlan(opts)

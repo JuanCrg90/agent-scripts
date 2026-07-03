@@ -6,5 +6,6 @@ type Options struct {
 	GeminiHome      string
 	AntigravityHome string
 	OpenCodeHome    string
+	PiHome          string
 	UseSymlink      bool
 }

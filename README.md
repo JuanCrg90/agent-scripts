@@ -1,6 +1,6 @@
 # Agent Skills Hub
 
-My source of truth for using agent skills with Codex, Claude, Gemini, Antigravity, and OpenCode.
+My source of truth for using agent skills with Codex, Claude, Gemini, Antigravity, OpenCode, and Pi.
 MCP server definitions live here once and sync to supported harness configs.
 
 ## Purpose
@@ -24,7 +24,7 @@ MCP server definitions live here once and sync to supported harness configs.
 
 ## Sync CLI
 
-The `agent-sync` Go CLI keeps Codex, Gemini CLI, Antigravity, and OpenCode in sync with this repo.
+The `agent-sync` Go CLI keeps Codex, Gemini CLI, Antigravity, OpenCode, and Pi in sync with this repo.
 
 ### Build
 
@@ -59,6 +59,7 @@ Command meaning:
 - Gemini home: `~/.gemini`
 - Antigravity home: `~/.gemini/antigravity-cli`
 - OpenCode config dir: `~/.config/opencode`
+- Pi agent config dir: `~/.pi/agent`
 
 ### Flags
 
@@ -67,12 +68,13 @@ Command meaning:
 - `--gemini-home <path>` override Gemini home
 - `--antigravity-home <path>` override Antigravity CLI home
 - `--opencode-home <path>` override OpenCode config dir
+- `--pi-home <path>` override Pi agent config dir
 - `--symlink` use symlinks instead of copying (always in sync, but links break if you move the repo and some tools dislike symlinks)
 
 Example with flags:
 
 ```sh
-bin/agent-sync sync --base ~/Projects/agent-scripts --codex-home ~/.codex --gemini-home ~/.gemini --opencode-home ~/.config/opencode
+bin/agent-sync sync --base ~/Projects/agent-scripts --codex-home ~/.codex --gemini-home ~/.gemini --opencode-home ~/.config/opencode --pi-home ~/.pi/agent
 ```
 
 Symlink mode:
@@ -83,7 +85,7 @@ bin/agent-sync sync --symlink
 
 ### What syncs
 
-- `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`
+- `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`, `~/.pi/agent/AGENTS.md`
 - `gemini/settings.base.json` + `config/mcp/servers.json` → rendered `~/.gemini/settings.json`
 - `config/mcp/servers.json` → managed MCP block in `~/.codex/config.toml`
 - `AGENTS.md` → `~/.config/opencode/AGENTS.md`

@@ -87,6 +87,12 @@ func Targets(opts Options) []Target {
 			Kind:   KindFile,
 		},
 		{
+			Name:   "agents-pi",
+			Source: filepath.Join(base, "AGENTS.md"),
+			Dest:   filepath.Join(opts.PiHome, "AGENTS.md"),
+			Kind:   KindFile,
+		},
+		{
 			Name:   "skills-opencode",
 			Source: filepath.Join(base, "skills"),
 			Dest:   filepath.Join(opts.OpenCodeHome, "skills"),
