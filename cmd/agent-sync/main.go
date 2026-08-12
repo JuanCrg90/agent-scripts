@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -27,22 +28,22 @@ func main() {
 
 	fs := flag.NewFlagSet(command, flag.ExitOnError)
 	base := fs.String("base", baseDefault, "Base directory for agent-scripts")
+	agentsHome := fs.String("agents-home", "~/.agents", "General agents home directory")
 	codexHome := fs.String("codex-home", defaultCodexHome(), "Codex home directory")
 	geminiHome := fs.String("gemini-home", "~/.gemini", "Gemini home directory")
 	antigravityHome := fs.String("antigravity-home", "~/.gemini/antigravity-cli", "Antigravity CLI home directory")
 	opencodeHome := fs.String("opencode-home", "~/.config/opencode", "OpenCode config directory")
 	piHome := fs.String("pi-home", "~/.pi/agent", "Pi agent config directory")
-	useSymlink := fs.Bool("symlink", false, "Use symlinks instead of copying (single source of truth, but links can break if moved)")
 	fs.Parse(os.Args[2:])
 
 	opts := syncer.Options{
 		BaseDir:         expandPath(*base),
+		AgentsHome:      expandPath(*agentsHome),
 		CodexHome:       expandPath(*codexHome),
 		GeminiHome:      expandPath(*geminiHome),
 		AntigravityHome: expandPath(*antigravityHome),
 		OpenCodeHome:    expandPath(*opencodeHome),
 		PiHome:          expandPath(*piHome),
-		UseSymlink:      *useSymlink,
 	}
 
 	switch command {
@@ -56,6 +57,8 @@ func main() {
 		runInit(opts)
 	case "sync":
 		runSync(opts)
+	case "add":
+		runAdd(opts, fs.Args())
 	default:
 		usage()
 		os.Exit(2)
@@ -65,16 +68,18 @@ func main() {
 func usage() {
 	fmt.Println("agent-sync <command> [flags]")
 	fmt.Println("")
-	fmt.Println("Commands: status, diff, plan, doctor, init, sync")
+	fmt.Println("Commands: status, diff, plan, doctor, init, sync, add")
 	fmt.Println("")
 	fmt.Println("Flags:")
 	fmt.Println("  --base <path>        Base directory (default: ~/Projects/agent-scripts)")
+	fmt.Println("  --agents-home <path> General agents home (default: ~/.agents)")
 	fmt.Println("  --codex-home <path>  Codex home (default: $CODEX_HOME or ~/.codex)")
 	fmt.Println("  --gemini-home <path> Gemini home (default: ~/.gemini)")
 	fmt.Println("  --antigravity-home <path> Antigravity CLI home (default: ~/.gemini/antigravity-cli)")
 	fmt.Println("  --opencode-home <path> OpenCode config dir (default: ~/.config/opencode)")
 	fmt.Println("  --pi-home <path>     Pi agent config dir (default: ~/.pi/agent)")
-	fmt.Println("  --symlink            Use symlinks instead of copying. Pros: always in sync. Cons: links can break if you move the repo; some tools dislike symlinks.")
+	fmt.Println("")
+	fmt.Println("add <git-url> imports skills into canonical storage, then links every harness.")
 }
 
 func runStatus(opts syncer.Options) {
@@ -121,6 +126,27 @@ func runInit(opts syncer.Options) {
 		fatal(err)
 	}
 	if err := os.MkdirAll(opts.PiHome, 0o755); err != nil {
+		fatal(err)
+	}
+	runSync(opts)
+}
+
+func runAdd(opts syncer.Options, args []string) {
+	if len(args) != 1 {
+		fatal(fmt.Errorf("add requires exactly one Git repository URL"))
+	}
+
+	dir, err := os.MkdirTemp("", "agent-sync-add-*")
+	if err != nil {
+		fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	sourceDir := filepath.Join(dir, "source")
+	if err := exec.Command("git", "clone", "--depth", "1", args[0], sourceDir).Run(); err != nil {
+		fatal(fmt.Errorf("clone %s: %w", args[0], err))
+	}
+	if err := syncer.ImportSkills(sourceDir, filepath.Join(opts.BaseDir, "skills")); err != nil {
 		fatal(err)
 	}
 	runSync(opts)

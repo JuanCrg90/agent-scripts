@@ -23,6 +23,18 @@ func Targets(opts Options) []Target {
 	base := opts.BaseDir
 	return []Target{
 		{
+			Name:   "agents-agents",
+			Source: filepath.Join(base, "AGENTS.md"),
+			Dest:   filepath.Join(opts.AgentsHome, "AGENTS.md"),
+			Kind:   KindFile,
+		},
+		{
+			Name:   "skills-agents",
+			Source: filepath.Join(base, "skills"),
+			Dest:   filepath.Join(opts.AgentsHome, "skills"),
+			Kind:   KindDir,
+		},
+		{
 			Name:   "agents-codex",
 			Source: filepath.Join(base, "AGENTS.md"),
 			Dest:   filepath.Join(opts.CodexHome, "AGENTS.md"),
@@ -54,6 +66,12 @@ func Targets(opts Options) []Target {
 			Kind: KindCodexConfig,
 		},
 		{
+			Name:   "skills-pi",
+			Source: filepath.Join(base, "skills"),
+			Dest:   filepath.Join(opts.PiHome, "skills"),
+			Kind:   KindDir,
+		},
+		{
 			Name:   "skills-codex",
 			Source: filepath.Join(base, "skills"),
 			Dest:   filepath.Join(opts.CodexHome, "skills"),
@@ -64,6 +82,12 @@ func Targets(opts Options) []Target {
 			Source: filepath.Join(base, "AGENTS.md"),
 			Dest:   filepath.Join(opts.AntigravityHome, "AGENTS.md"),
 			Kind:   KindFile,
+		},
+		{
+			Name:   "skills-gemini",
+			Source: filepath.Join(base, "skills"),
+			Dest:   filepath.Join(opts.GeminiHome, "skills"),
+			Kind:   KindDir,
 		},
 		{
 			Name:   "skills-antigravity",

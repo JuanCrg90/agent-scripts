@@ -69,7 +69,7 @@ Command meaning:
 - `--antigravity-home <path>` override Antigravity CLI home
 - `--opencode-home <path>` override OpenCode config dir
 - `--pi-home <path>` override Pi agent config dir
-- `--symlink` use symlinks instead of copying (always in sync, but links break if you move the repo and some tools dislike symlinks)
+- `--agents-home <path>` override general Agents config dir
 
 Example with flags:
 
@@ -77,21 +77,26 @@ Example with flags:
 bin/agent-sync sync --base ~/Projects/agent-scripts --codex-home ~/.codex --gemini-home ~/.gemini --opencode-home ~/.config/opencode --pi-home ~/.pi/agent
 ```
 
-Symlink mode:
+Skills and `AGENTS.md` are always directory/file symlinks, respectively.
+This makes `agent-scripts` the only source of truth. Do not run
+`npx skills add`; use the native import command instead:
 
 ```sh
-bin/agent-sync sync --symlink
+bin/agent-sync add https://github.com/cloudflare/skills
 ```
+
+`add` clones the source into a temporary directory, imports its `skills/*`
+folders into `agent-scripts/skills`, skips harness `.system` metadata, rejects
+same-name content conflicts, then links every supported skill root.
 
 ### What syncs
 
-- `AGENTS.md` → `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`, `~/.pi/agent/AGENTS.md`
+- `AGENTS.md` → `~/.agents/AGENTS.md`, `~/.codex/AGENTS.md`, `~/.gemini/AGENTS.md`, `~/.gemini/antigravity-cli/AGENTS.md`, `~/.config/opencode/AGENTS.md`, `~/.pi/agent/AGENTS.md`
 - `gemini/settings.base.json` + `config/mcp/servers.json` → rendered `~/.gemini/settings.json`
 - `config/mcp/servers.json` → managed MCP block in `~/.codex/config.toml`
 - `AGENTS.md` → `~/.config/opencode/AGENTS.md`
 - `config/mcp/servers.json` → merged `mcp` entries in `~/.config/opencode/opencode.json`
-- `skills/` → `~/.codex/skills`, `~/.gemini/antigravity/skills`
-- `skills/` → `~/.config/opencode/skills`
+- `skills/` → `~/.agents/skills`, `~/.codex/skills`, `~/.gemini/skills`, `~/.gemini/antigravity-cli/skills`, `~/.config/opencode/skills`, `~/.pi/agent/skills`
 - `scripts/commiter` → `~/.codex/scripts/commiter`
 
 ### RTK

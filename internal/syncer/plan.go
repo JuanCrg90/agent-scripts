@@ -2,7 +2,6 @@ package syncer
 
 import (
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -35,7 +34,7 @@ func BuildPlan(opts Options) (Plan, error) {
 	}
 
 	for _, target := range Targets(opts) {
-		if opts.UseSymlink && !isManagedTarget(target) {
+		if !isManagedTarget(target) {
 			linkAction, err := buildLinkAction(target)
 			if err != nil {
 				return Plan{}, err
@@ -45,14 +44,8 @@ func BuildPlan(opts Options) (Plan, error) {
 		}
 
 		switch target.Kind {
-		case KindFile:
-			actions = append(actions, buildFileAction(target.Source, target.Dest))
-		case KindDir:
-			dirActions, err := buildDirActions(target.Source, target.Dest)
-			if err != nil {
-				return Plan{}, err
-			}
-			actions = append(actions, dirActions...)
+		case KindFile, KindDir:
+			return Plan{}, fmt.Errorf("unmanaged target %s must be linked", target.Name)
 		case KindGeminiConfig, KindCodexConfig, KindAgyMcpConfig, KindOpenCodeConfig:
 			action, err := buildManagedAction(target, opts)
 			if err != nil {
@@ -108,68 +101,6 @@ func buildLinkAction(target Target) (Action, error) {
 		}
 	}
 	return Action{Type: ActionUpdate, Source: target.Source, Dest: target.Dest, Note: "symlink"}, nil
-}
-
-func buildFileAction(src, dest string) Action {
-	if isSymlink(dest) {
-		return Action{Type: ActionUpdate, Source: src, Dest: dest, Note: "replace symlink"}
-	}
-	if sameFile(src, dest) {
-		return Action{Type: ActionNoop, Source: src, Dest: dest}
-	}
-	if _, err := os.Stat(dest); err != nil {
-		if os.IsNotExist(err) {
-			return Action{Type: ActionCreate, Source: src, Dest: dest}
-		}
-		return Action{Type: ActionUpdate, Source: src, Dest: dest, Note: err.Error()}
-	}
-	return Action{Type: ActionUpdate, Source: src, Dest: dest}
-}
-
-func buildDirActions(srcDir, destDir string) ([]Action, error) {
-	var actions []Action
-	err := filepath.WalkDir(srcDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-		rel, err := filepath.Rel(srcDir, path)
-		if err != nil {
-			return err
-		}
-		dest := filepath.Join(destDir, rel)
-		actions = append(actions, buildFileAction(path, dest))
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-	return actions, nil
-}
-
-func sameFile(src, dest string) bool {
-	srcInfo, err := os.Stat(src)
-	if err != nil || srcInfo.IsDir() {
-		return false
-	}
-	destInfo, err := os.Stat(dest)
-	if err != nil || destInfo.IsDir() {
-		return false
-	}
-	if srcInfo.Size() != destInfo.Size() {
-		return false
-	}
-	srcBytes, err := os.ReadFile(src)
-	if err != nil {
-		return false
-	}
-	destBytes, err := os.ReadFile(dest)
-	if err != nil {
-		return false
-	}
-	return string(srcBytes) == string(destBytes)
 }
 
 func isSymlink(path string) bool {

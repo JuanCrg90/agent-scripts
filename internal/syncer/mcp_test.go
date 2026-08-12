@@ -329,6 +329,7 @@ func TestBuildPlanAndApplyManagedConfigs(t *testing.T) {
 
 	opts := Options{
 		BaseDir:         baseDir,
+		AgentsHome:      filepath.Join(baseDir, "agents-home"),
 		CodexHome:       codexHome,
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
@@ -415,6 +416,7 @@ func TestBuildPlanReplacesSymlinkedManagedFile(t *testing.T) {
 
 	opts := Options{
 		BaseDir:         baseDir,
+		AgentsHome:      filepath.Join(baseDir, "agents-home"),
 		CodexHome:       codexHome,
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),
@@ -470,6 +472,7 @@ func TestBuildPlanLeavesExistingGeminiOverrideAlone(t *testing.T) {
 
 	opts := Options{
 		BaseDir:         baseDir,
+		AgentsHome:      filepath.Join(baseDir, "agents-home"),
 		CodexHome:       codexHome,
 		GeminiHome:      geminiHome,
 		AntigravityHome: filepath.Join(baseDir, "antigravity-home"),

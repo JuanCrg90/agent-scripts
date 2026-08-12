@@ -48,7 +48,7 @@ func Apply(plan Plan, opts Options, prompt PromptFunc) error {
 			continue
 		}
 
-		if opts.UseSymlink {
+		if action.Note == "symlink" {
 			if err := replaceSymlink(action.Source, action.Dest); err != nil {
 				return err
 			}
