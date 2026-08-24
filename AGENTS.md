@@ -1,8 +1,5 @@
 # AGENTS.md
 
-JuanCrg90 owns this. Conversation Starter: say hi + 1 motivating line.
-Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
-
 ## Agent Protocol
 
 - Contact: Juan C. Ruiz (@JuanCrg90, <JuanCrg90@gmail.com>).
@@ -46,7 +43,7 @@ Work style: telegraph; noun-phrases ok; drop grammar; min tokens.
 
 ## Flow & Runtime
 
-- Use Codex background for long jobs; tmux only for interactive/persistent (debugger/server).
+- Use herdr for orchestation, spin new pi agents with gpt-5.6 luna for regular tasks, use gpt-5.6 sol for tasks that requires high reasoning
 
 ## Build / Test
 
@@ -148,10 +145,3 @@ contention.
 
 - GitHub CLI for PRs/CI/releases. Given issue/PR URL (or `/pull/5`): use `gh`, not web search.
 - Examples: `gh issue view <url> --comments -R owner/repo`, `gh pr view <url> --comments --files -R owner/repo`.
-
-### tmux
-
-- Use only when you need persistence/interaction (debugger/server).
-- Quick refs: `tmux new -d -s codex-shell`, `tmux attach -t codex-shell`, `tmux list-sessions`, `tmux kill-session -t codex-shell`.
-
-
