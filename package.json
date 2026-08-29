@@ -1,0 +1,25 @@
+{
+  "name": "agent-scripts",
+  "version": "1.0.0",
+  "description": "My source of truth for using agent skills with Codex, Claude, Gemini, Antigravity, OpenCode, and Pi. MCP server definitions live here once and sync to supported harness configs.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JuanCrg90/agent-scripts.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JuanCrg90/agent-scripts/issues"
+  },
+  "homepage": "https://github.com/JuanCrg90/agent-scripts#readme",
+  "dependencies": {
+    "commander": "^15.0.0",
+    "puppeteer-core": "^25.9.0"
+  }
+}
