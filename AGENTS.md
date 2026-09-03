@@ -43,7 +43,8 @@ Guardrails: use `trash` for deletes.
 ## Flow & Runtime
 
 - Use herdr for orchestration; the herdr skill is your source of truth. 
-- For development tasks, spawn new agents with the Pi harness `pi`. Use gpt-5.6-terra for regular tasks and gpt-5.6-sol for tasks requiring high reasoning.
+- Always use openai-codex provider for GPT models.
+- For development tasks, spawn new agents with the Pi harness `pi`. Use gpt-5.6-terra  for regular tasks and gpt-5.6-sol for tasks requiring high reasoning.
 - For review tasks, spawn new agents with Antigravity `agy` cli as harness with the Gemini 3.1 Pro model, unless the Juan explicitly requests another model or harness. 
 
 ## Build / Test
