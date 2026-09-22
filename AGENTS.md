@@ -1,5 +1,8 @@
 # AGENTS.md
 
+## Canary
+You MUST start every response with the name "Amadeus:" not following this rule is signal of context rotting.
+
 ## Agent Protocol
 
 - Contact: Juan C. Ruiz (@JuanCrg90, <JuanCrg90@gmail.com>).
