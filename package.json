@@ -1,10 +1,12 @@
 {
   "name": "agent-scripts",
   "version": "1.0.0",
-  "description": "My source of truth for using agent skills with Codex, Claude, Gemini, Antigravity, OpenCode, and Pi. MCP server definitions live here once and sync to supported harness configs.",
+  "packageManager": "pnpm@12.5.1",
+  "description": "Pi-first source of truth for agent instructions, skills, and local tools.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "browser-tools": "tsx scripts/browser-tools.ts",
+    "test": "bash tests/setup-harness.sh"
   },
   "repository": {
     "type": "git",
@@ -14,6 +16,9 @@
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "bugs": {
     "url": "https://github.com/JuanCrg90/agent-scripts/issues"
   },
@@ -21,5 +26,8 @@
   "dependencies": {
     "commander": "^15.0.0",
     "puppeteer-core": "^25.9.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
   }
 }

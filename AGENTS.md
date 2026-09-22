@@ -45,10 +45,10 @@ Guardrails: use `trash` for deletes.
 
 ## Flow & Runtime
 
-- Use herdr for orchestration; the herdr skill is your source of truth. 
+- Pi is the primary harness. Use herdr only when the user explicitly requests it; its skill is the source of truth.
 - Always use openai-codex provider for GPT models.
-- For development tasks, spawn new agents with the Pi harness `pi`. Use gpt-5.6-terra  for regular tasks and gpt-5.6-sol for tasks requiring high reasoning.
-- For review tasks, spawn new agents with Antigravity `agy` cli as harness with the Gemini 3.1 Pro model, unless the Juan explicitly requests another model or harness. 
+- For development tasks, spawn agents with Pi: gpt-5.6-terra for regular work and gpt-5.6-sol for high-reasoning work.
+- Use Antigravity `agy` with Gemini 3.1 Pro only for review or investigation. Use Codex only when explicitly appropriate.
 
 ## Build / Test
 
@@ -65,8 +65,7 @@ Guardrails: use `trash` for deletes.
 - Destructive ops forbidden unless explicit (`reset --hard`, `clean`, `restore`, `rm`, …).
 - Remotes under `~/Projects`: prefer SSH; flip HTTPS->SSH before pull/push.
 - Commit helper on PATH: `committer` (bash). Prefer it; if repo has
-  `./scripts/committer`, use that. See `~/Projects/agent-scripts/tools.md` for
-  usage and commit-message style.
+  `./scripts/committer`, use that.
 - Don’t delete/rename unexpected stuff; stop + ask.
 - No repo-wide S/R scripts; keep edits small/reviewable.
 - Avoid manual `git stash`; if Git auto-stashes during pull/rebase, that’s fine (hint, not hard guardrail).
@@ -90,18 +89,13 @@ Guardrails: use `trash` for deletes.
 
 ## Tools
 
-Read `~/Projects/agent-scripts/tools.md` for the full tool catalog if it exists.
-
-For browser automation, prefer the local `browser-tools.ts` CLI
-(`~/Projects/agent-scripts/scripts/browser-tools.ts`). It uses Chrome's
-DevTools Protocol directly and does not require an MCP server, matching the
-no-MCP setup of this harness.
+For browser automation, prefer the local browser CLI when the current project
+provides one. It should use Chrome DevTools Protocol directly rather than MCP.
 
 ## RTK
 
 Shell commands: prefer `rtk <cmd>`. Verify with `rtk --version`, `rtk gain`,
-`which rtk`. See `~/Projects/agent-scripts/tools.md` for full `rtk` and
-`committer` usage.
+and `which rtk`.
 
 Use `AGENTS.md` as source of truth. Do not depend on generated `GEMINI.md`
 overrides.

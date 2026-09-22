@@ -19,7 +19,7 @@ gh run list / gh run view <id>
 ## browser-tools
 
 Lightweight Chrome automation via the DevTools Protocol. Lives at
-`~/Projects/agent-scripts/scripts/browser-tools.ts`.
+`scripts/browser-tools.ts` in this repository.
 
 **Why this exists**: this harness intentionally avoids MCPs, and the installed
 browser skills (`browser-testing-with-devtools`, `web-perf`) require an MCP
@@ -28,17 +28,15 @@ it works without any MCP setup.
 
 **Prerequisites**:
 
-- Google Chrome installed at the default macOS path (override with
-  `--chrome-path`).
-- Node deps installed in `~/Projects/agent-scripts`:
-  `commander`, `puppeteer-core`.
-- A TypeScript runner such as `tsx` (recommended) or `ts-node`.
+- Node.js 22.12 or newer and pnpm 12.5.1, then `pnpm install --frozen-lockfile` in this repository.
+- Google Chrome on macOS, or Google Chrome/Chromium on Linux. Override detection
+  with `--chrome-path`.
+- `rsync` only when using `start --profile`.
 
-**Run it**:
+**Run it** (from this repository's root):
 
 ```bash
-cd ~/Projects/agent-scripts
-tsx scripts/browser-tools.ts <command>
+pnpm run browser-tools <command>
 ```
 
 **Commands**:
@@ -61,16 +59,16 @@ tsx scripts/browser-tools.ts <command>
 
 ```bash
 # 1. Start Chrome
-tsx scripts/browser-tools.ts start
+pnpm run browser-tools start
 
 # 2. Navigate somewhere
-tsx scripts/browser-tools.ts nav https://gema.cafe
+pnpm run browser-tools nav https://gema.cafe
 
 # 3. Screenshot (prints path; copy to Desktop if needed)
-tsx scripts/browser-tools.ts screenshot
+pnpm run browser-tools screenshot
 
 # 4. Evaluate JS in the active page
-tsx scripts/browser-tools.ts eval "document.title"
+pnpm run browser-tools eval "document.title"
 ```
 
 **Notes**:
@@ -79,7 +77,7 @@ tsx scripts/browser-tools.ts eval "document.title"
 - Screenshots are saved to `/tmp`; move them manually (e.g. to `~/Desktop`).
 - For pages that need the user's profile (logins, cookies), start with
   `--profile`.
-- To shut down the debug Chrome instance: `tsx scripts/browser-tools.ts kill --all`.
+- To shut down the debug Chrome instance: `pnpm run browser-tools kill --all`.
 
 ## rtk
 

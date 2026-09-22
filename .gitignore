@@ -1,2 +1,5 @@
-bin/*
 node_modules/
+package-lock.json
+.pi/
+.antigravitycli/
+!skills/.DS_Store

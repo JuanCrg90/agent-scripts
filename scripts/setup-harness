@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s <pi|agy|codex>\n' "$(basename "$0")" >&2
+  exit 2
+}
+
+[ "$#" -eq 1 ] || usage
+
+repo_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+case "$1" in
+  pi) config_dir=${PI_CODING_AGENT_DIR:-"$HOME/.pi/agent"} ;;
+  agy) config_dir=${AGY_HOME:-"$HOME/.gemini/antigravity-cli"} ;;
+  codex) config_dir=${CODEX_HOME:-"$HOME/.codex"} ;;
+  *) usage ;;
+esac
+
+link() {
+  local source=$1
+  local destination=$2
+
+  if [ -e "$destination" ] || [ -L "$destination" ]; then
+    if [ -L "$destination" ] && [ "$(readlink "$destination")" = "$source" ]; then
+      return
+    fi
+    printf 'Refusing to replace existing path: %s\n' "$destination" >&2
+    exit 1
+  fi
+
+  mkdir -p "$(dirname "$destination")"
+  ln -s "$source" "$destination"
+}
+
+link "$repo_dir/AGENTS.md" "$config_dir/AGENTS.md"
+link "$repo_dir/skills" "$config_dir/skills"
+link "$repo_dir/scripts/committer" "${COMMITTER_PATH:-"$HOME/.local/bin/committer"}"
+printf 'Linked %s configuration to %s\n' "$1" "$repo_dir"

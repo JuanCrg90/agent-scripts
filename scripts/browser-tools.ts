@@ -1,4 +1,4 @@
-#!/usr/bin/env ts-node
+#!/usr/bin/env -S pnpm exec tsx
 
 /**
  * Minimal Chrome DevTools helpers inspired by Mario Zechner's
@@ -8,7 +8,8 @@
  * directly via the DevTools protocol without pulling in a large MCP server.
  */
 import { Command } from 'commander';
-import { execSync, spawn } from 'node:child_process';
+import { execFileSync, execSync, spawn } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
@@ -23,7 +24,34 @@ type AsyncFunctionCtor = new (...args: string[]) => (...fnArgs: unknown[]) => Pr
 
 const DEFAULT_PORT = 9222;
 const DEFAULT_PROFILE_DIR = path.join(os.homedir(), '.cache', 'scraping');
-const DEFAULT_CHROME_BIN = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const DEFAULT_CHROME_BIN = findChromeBinary();
+
+function findChromeBinary(): string | undefined {
+  const macOSChrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+  if (process.platform === 'darwin' && existsSync(macOSChrome)) {
+    return macOSChrome;
+  }
+
+  const candidates = process.platform === 'linux'
+    ? ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser']
+    : [];
+  for (const candidate of candidates) {
+    try {
+      return execFileSync('which', [candidate], { encoding: 'utf8' }).trim();
+    } catch {
+      // try the next browser name
+    }
+  }
+}
+
+function defaultChromeProfileDir(chromePath: string): string {
+  if (process.platform === 'darwin') {
+    return path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome');
+  }
+  const browser = path.basename(chromePath).toLowerCase();
+  const profileName = browser.includes('chromium') ? 'chromium' : 'google-chrome';
+  return path.join(os.homedir(), '.config', profileName);
+}
 
 function browserURL(port: number): string {
   return `http://localhost:${port}`;
@@ -57,29 +85,40 @@ program
   .option('-p, --port <number>', 'Remote debugging port (default: 9222)', (value) => Number.parseInt(value, 10), DEFAULT_PORT)
   .option('--profile', 'Copy your default Chrome profile before launch.', false)
   .option('--profile-dir <path>', 'Directory for the temporary Chrome profile.', DEFAULT_PROFILE_DIR)
-  .option('--chrome-path <path>', 'Path to the Chrome binary.', DEFAULT_CHROME_BIN)
+  .option('--chrome-path <path>', 'Path to the Chrome or Chromium binary.', DEFAULT_CHROME_BIN)
   .option('--kill-existing', 'Stop any running Google Chrome before launch (default: false).', false)
   .action(async (options) => {
     const { port, profile, profileDir, chromePath, killExisting } = options as {
       port: number;
       profile: boolean;
       profileDir: string;
-      chromePath: string;
+      chromePath?: string;
       killExisting: boolean;
     };
 
+    if (!chromePath) {
+      console.error('Chrome or Chromium was not found. Install it or pass --chrome-path <path>.');
+      process.exit(1);
+    }
+
     if (killExisting) {
-      try {
-        execSync("killall 'Google Chrome'", { stdio: 'ignore' });
-      } catch {
-        // ignore missing processes
-      }
+      const sessions = await describeChromeSessions({ includeAll: true });
+      sessions.forEach((session) => {
+        try {
+          process.kill(session.pid);
+        } catch {
+          // process exited while it was being inspected
+        }
+      });
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    execSync(`mkdir -p "${profileDir}"`);
+    mkdirSync(profileDir, { recursive: true });
     if (profile) {
-      const source = `${path.join(os.homedir(), 'Library', 'Application Support', 'Google', 'Chrome')}/`;
-      execSync(`rsync -a --delete "${source}" "${profileDir}/"`, { stdio: 'ignore' });
+      const source = defaultChromeProfileDir(chromePath);
+      if (!existsSync(source)) {
+        throw new Error(`Chrome profile not found at ${source}`);
+      }
+      execFileSync('rsync', ['-a', '--delete', `${source}/`, `${profileDir}/`], { stdio: 'ignore' });
     }
 
     spawn(chromePath, [`--remote-debugging-port=${port}`, `--user-data-dir=${profileDir}`, '--no-first-run', '--disable-popup-blocking'], {
