@@ -79,8 +79,11 @@ All OpenCode Go models below are accessed through Pi via the installed `pi-openc
 | Default implementation | `oc-sdk-go/kimi-k2.7-code` | Well-scoped features, bug fixes, refactors, tests, routine backend/frontend work |
 | Complex implementation | `openai-codex/gpt-5.6-terra` | Cross-cutting changes, high risk, security/concurrency, architectural migrations |
 | Difficult escalation | `oc-sdk-go/glm-5.3` | Hard debugging or stalled implementation paths |
+| Local lightweight | `llama/Qwen3.6-35B-A3B` | Simple agentic tasks, local experiments, offline work, cheap read-only probes |
 
 Escalate to Terra or GLM because of reasoning complexity, ambiguity, blast radius, security/concurrency risk, or failed attempts; do not escalate merely because a task is large.
+
+Use the local `llama/Qwen3.6-35B-A3B` model when latency, cost, or offline operation matters more than deep reasoning. Do not use it for architectural decisions, security-sensitive changes, or as the sole reviewer.
 
 ### Verification
 
