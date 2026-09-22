@@ -117,6 +117,16 @@ Use Antigravity `agy` with Gemini 3.1 Pro only as an additional independent revi
 * Sol wants a second independent opinion on a high-risk finding
 * the user explicitly requests Gemini or Antigravity
 
+### Herdr Orchestration Rules
+
+When Herdr is active, this Pi agent is the orchestrator of the work session.
+
+* All coordination of other agents is handled by this orchestrator
+* Agents never communicate directly with each other
+* All communication between agents flows through the orchestrator
+* Use structured JSON data when passing plans, findings, or results between agents
+* The orchestrator acts as the control tower: it receives input, decides routing, and synthesizes output
+
 ### Herdr Workflows
 
 When Herdr orchestration is active, it manages the lifecycle and visibility of Pi agents and supporting processes.
