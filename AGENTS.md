@@ -98,8 +98,14 @@ Report files changed, commands run, results, failures, assumptions, and unresolv
 
 Open Code Review (`ocr`) is the default independent reviewer for substantial changes. It runs as a managed process, not as a Pi coding agent.
 
-* Default review: `oc-sdk-go/qwen3.8-flash`
-* High-risk review: `oc-sdk-go/qwen3.8-max`
+OCR is configured to use the OpenCode Go subscription:
+
+* Provider: `opencode-go`
+* Endpoint: `https://opencode.ai/zen/go/v1`
+* Default review model: `qwen3.8-flash`
+* High-risk review model: `qwen3.8-max`
+
+When using OCR from Pi, the model IDs above map to Pi's `oc-sdk-go/qwen3.8-flash` and `oc-sdk-go/qwen3.8-max` via the `pi-opencode-bridge` package.
 
 Run it with agent-oriented output and a concise background:
 
