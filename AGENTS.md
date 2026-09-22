@@ -45,10 +45,108 @@ Guardrails: use `trash` for deletes.
 
 ## Flow & Runtime
 
-- Pi is the primary harness. Use herdr only when the user explicitly requests it; its skill is the source of truth.
-- Always use openai-codex provider for GPT models.
-- For development tasks, spawn agents with Pi: gpt-5.6-terra for regular work and gpt-5.6-sol for high-reasoning work.
-- Use Antigravity `agy` with Gemini 3.1 Pro only for review or investigation. Use Codex only when explicitly appropriate.
+Pi is the primary harness and GPT-5.6 Sol is the primary orchestrator.
+
+Use herdr only when the user explicitly requests orchestration with herdr; when herdr is active, its installed skill is the source of truth for commands, pane management, agent lifecycle, and output collection.
+
+Always use the `openai-codex` provider for GPT models.
+
+### Orchestrator
+
+Use `openai-codex/gpt-5.6-sol` as the primary orchestrator/captain.
+
+Sol owns:
+
+* task decomposition and delegation
+* architectural decisions
+* synthesis of agent findings
+* review triage
+* escalation decisions
+* final verification
+
+Sol avoids routine implementation when it can be delegated effectively.
+
+### Development Routing
+
+Use the smallest capable Pi worker for the task.
+
+All OpenCode Go models below are accessed through Pi via the installed `pi-opencode-bridge` package, with IDs under the `oc-sdk-go` provider:
+
+| Worker | Model | Role |
+| --- | --- | --- |
+| Reconnaissance | `oc-sdk-go/deepseek-v4.1-flash` | Locate files, trace flow, read-only investigation, cheap parallel probes |
+| Broad context | `oc-sdk-go/qwen3.8-flash` | Understand unfamiliar subsystems, frontend/UI-heavy analysis, second investigation path |
+| Default implementation | `oc-sdk-go/kimi-k2.7-code` | Well-scoped features, bug fixes, refactors, tests, routine backend/frontend work |
+| Complex implementation | `openai-codex/gpt-5.6-terra` | Cross-cutting changes, high risk, security/concurrency, architectural migrations |
+| Difficult escalation | `oc-sdk-go/glm-5.3` | Hard debugging or stalled implementation paths |
+
+Escalate to Terra or GLM because of reasoning complexity, ambiguity, blast radius, security/concurrency risk, or failed attempts; do not escalate merely because a task is large.
+
+### Verification
+
+Any agent that modifies code must run relevant verification before completion:
+
+* tests
+* type checking
+* linting/formatting
+* static analysis
+* build validation
+
+Report files changed, commands run, results, failures, assumptions, and unresolved concerns. Sol decides whether verification is sufficient.
+
+### Code Review
+
+Open Code Review (`ocr`) is the default independent reviewer for substantial changes. It runs as a managed process, not as a Pi coding agent.
+
+* Default review: `oc-sdk-go/qwen3.8-flash`
+* High-risk review: `oc-sdk-go/qwen3.8-max`
+
+Run it with agent-oriented output and a concise background:
+
+```bash
+ocr review --audience agent --format json --background "<review context>"
+```
+
+For large output, write to a file and return its path. OCR findings are evidence; Sol triages and decides which are actionable.
+
+### Independent Review and Gemini
+
+Use Antigravity `agy` with Gemini 3.1 Pro only as an additional independent reviewer or investigator, not as part of the normal implementation/review path. Use it when:
+
+* OCR and the implementation worker disagree on a significant issue
+* Sol wants a second independent opinion on a high-risk finding
+* the user explicitly requests Gemini or Antigravity
+
+### Herdr Workflows
+
+When Herdr orchestration is active, it manages the lifecycle and visibility of Pi agents and supporting processes.
+
+* Use `herdr agent` for Pi agents (investigation, implementation, reasoning)
+* Use ordinary `herdr pane` commands for tests, linters, build/dev servers, and OCR
+
+A typical Herdr flow:
+
+1. Sol acts as captain
+2. Investigation workers gather context in parallel when useful
+3. One implementation worker performs the change
+4. Verification runs in managed panes
+5. OCR runs in a review pane against the resulting diff
+6. Sol collects findings and routes accepted fixes back to the implementation worker
+7. Verification runs again
+8. Sol decides whether another review pass is needed
+
+Keep long-running or parallel work visible in separate panes.
+
+### General Principles
+
+* Prefer specialization over sending every task to the strongest model
+* Prefer cheap parallel investigation over expensive premature escalation
+* Prefer one writer and multiple readers
+* Prefer independent model families for implementation and review
+* Preserve context boundaries between investigation, implementation, and review
+* Do not blindly trust reviewer findings
+* Sol integrates evidence and makes the final engineering judgment
+* Use Codex directly only when explicitly appropriate
 
 ## Build / Test
 
