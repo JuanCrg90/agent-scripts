@@ -2,4 +2,5 @@ node_modules/
 package-lock.json
 .pi/
 .antigravitycli/
+skills/.system/
 !skills/.DS_Store
