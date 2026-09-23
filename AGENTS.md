@@ -70,15 +70,15 @@ Sol avoids routine implementation when it can be delegated effectively.
 
 Use the smallest capable Pi worker for the task.
 
-All OpenCode Go models below are accessed through Pi via the installed `pi-opencode-bridge` package, with IDs under the `oc-sdk-go` provider:
+All OpenCode Go models below are accessed through Pi via the installed `pi-opencode-bridge` package or the OpenCode CLI integration, with IDs under the `opencode-go` provider:
 
 | Worker | Model | Role |
 | --- | --- | --- |
-| Reconnaissance | `oc-sdk-go/deepseek-v4.1-flash` | Locate files, trace flow, read-only investigation, cheap parallel probes |
-| Broad context | `oc-sdk-go/qwen3.8-flash` | Understand unfamiliar subsystems, frontend/UI-heavy analysis, second investigation path |
-| Default implementation | `oc-sdk-go/kimi-k2.7-code` | Well-scoped features, bug fixes, refactors, tests, routine backend/frontend work |
+| Reconnaissance | `opencode-go/deepseek-v4.1-flash` | Locate files, trace flow, read-only investigation, cheap parallel probes |
+| Broad context | `opencode-go/qwen3.8-flash` | Understand unfamiliar subsystems, frontend/UI-heavy analysis, second investigation path |
+| Default implementation | `opencode-go/kimi-k2.7-code` | Well-scoped features, bug fixes, refactors, tests, routine backend/frontend work |
 | Complex implementation | `openai-codex/gpt-5.6-terra` | Cross-cutting changes, high risk, security/concurrency, architectural migrations |
-| Difficult escalation | `oc-sdk-go/glm-5.3` | Hard debugging or stalled implementation paths |
+| Difficult escalation | `opencode-go/glm-5.3` | Hard debugging or stalled implementation paths |
 | Local lightweight | `llama/Qwen3.6-35B-A3B` | Simple agentic tasks, local experiments, offline work, cheap read-only probes |
 
 Escalate to Terra or GLM because of reasoning complexity, ambiguity, blast radius, security/concurrency risk, or failed attempts; do not escalate merely because a task is large.
@@ -108,7 +108,7 @@ OCR is configured to use the OpenCode Go subscription:
 * Default review model: `qwen3.8-flash`
 * High-risk review model: `qwen3.8-max`
 
-When using OCR from Pi, the model IDs above map to Pi's `oc-sdk-go/qwen3.8-flash` and `oc-sdk-go/qwen3.8-max` via the `pi-opencode-bridge` package.
+When using OCR from Pi, the model IDs above map to Pi's `opencode-go/qwen3.8-flash` and `opencode-go/qwen3.8-max`.
 
 Run it with agent-oriented output and a concise background:
 
