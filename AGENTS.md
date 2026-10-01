@@ -45,15 +45,13 @@ Guardrails: use `trash` for deletes.
 
 ## Flow & Runtime
 
-Pi is the primary harness and GPT-5.6 Sol is the primary orchestrator.
+Pi is the primary harness; `openai-codex/gpt-6-sol` is the primary orchestrator.
 
-Use herdr only when the user explicitly requests orchestration with herdr; when herdr is active, its installed skill is the source of truth for commands, pane management, agent lifecycle, and output collection.
-
-Always use the `openai-codex` provider for GPT models.
+Use Herdr only when the user explicitly requests it. When active, its installed skill governs pane/agent control, lifecycle, and output. Direct `agy` use does not require Herdr. Always use the `openai-codex` provider for GPT models, not `openai`. Do not route work to OpenCode models.
 
 ### Orchestrator
 
-Use `openai-codex/gpt-5.6-sol` as the primary orchestrator/captain.
+Use `openai-codex/gpt-6-sol` as captain for new work.
 
 Sol owns:
 
@@ -68,22 +66,16 @@ Sol avoids routine implementation when it can be delegated effectively.
 
 ### Development Routing
 
-Use the smallest capable Pi worker for the task.
-
-All OpenCode Go models below are accessed through Pi via the installed `pi-opencode-bridge` package or the OpenCode CLI integration, with IDs under the `opencode-go` provider:
+Use the smallest capable worker for the task. Pi workers use local or `openai-codex` models; Gemini work uses the separate `agy` CLI, directly or through Herdr when requested.
 
 | Worker | Model | Role |
 | --- | --- | --- |
-| Reconnaissance | `opencode-go/deepseek-v4.1-flash` | Locate files, trace flow, read-only investigation, cheap parallel probes |
-| Broad context | `opencode-go/qwen3.8-flash` | Understand unfamiliar subsystems, frontend/UI-heavy analysis, second investigation path |
-| Default implementation | `opencode-go/kimi-k2.7-code` | Well-scoped features, bug fixes, refactors, tests, routine backend/frontend work |
-| Complex implementation | `openai-codex/gpt-5.6-terra` | Cross-cutting changes, high risk, security/concurrency, architectural migrations |
-| Difficult escalation | `opencode-go/glm-5.3` | Hard debugging or stalled implementation paths |
-| Local lightweight | `llama/Qwen3.6-35B-A3B` | Simple agentic tasks, local experiments, offline work, cheap read-only probes |
+| Local first | `llama/Qwen3.6-35B-A3B` | Offline/private or budget-sensitive factual research, repo mapping, deterministic verification, small well-specified edits/tests; give it the tools the task needs |
+| Gemini investigation/review | `agy` with Gemini 3.8 Flash | Broad context, unfamiliar code tracing, cheap independent probes and review; use directly without requiring Herdr |
+| Default implementation | `openai-codex/gpt-6-luna` | Scoped features, bugs, refactors, and tests when local is insufficient; also handles ambiguous or cross-cutting work |
+| Specialist implementation | `openai-codex/gpt-5.6-terra` | Prefer over Luna for security/concurrency, high-blast-radius migrations, or tasks where prior results show Terra performs better; verify the choice by results |
 
-Escalate to Terra or GLM because of reasoning complexity, ambiguity, blast radius, security/concurrency risk, or failed attempts; do not escalate merely because a task is large.
-
-Use the local `llama/Qwen3.6-35B-A3B` model when latency, cost, or offline operation matters more than deep reasoning. Do not use it for architectural decisions, security-sensitive changes, or as the sole reviewer.
+Escalate for complexity, risk, or failed attempts, not size alone. Local Qwen can implement bounded changes with tests and independent review; do not treat it as read-only by default. Escalate when it stalls or misses constraints. Do not make it the sole reviewer or decision-maker on security/architecture. Offline/privacy benefits hold only when tools and task data stay local.
 
 ### Verification
 
@@ -97,34 +89,18 @@ Any agent that modifies code must run relevant verification before completion:
 
 Report files changed, commands run, results, failures, assumptions, and unresolved concerns. Sol decides whether verification is sufficient.
 
-### Code Review
+### Independent Code Review
 
-Open Code Review (`ocr`) is the default independent reviewer for substantial changes. It runs as a managed process, not as a Pi coding agent.
+Review substantial changes with a separate worker, preferably a different model family from the implementer. Use `agy` with Gemini 3.8 Flash medium/high for routine independent review, directly by default or through Herdr when active; use Gemini 3.1 Pro high for high-risk reasoning. If `agy` is unavailable, use a separate Pi reviewer (local for bounded checks, or a GPT worker for harder reviews); for high-risk work, Sol also reviews evidence and requests another opinion if needed. Local Qwen is not the sole reviewer. Give the reviewer the diff, intent, and tests; ask for actionable findings with file/line and severity. Sol triages findings, sends fixes to one writer, and verifies again.
 
-OCR is configured to use the OpenCode Go subscription:
+### Antigravity (`agy`)
 
-* Provider: `opencode-go`
-* Endpoint: `https://opencode.ai/zen/go/v1`
-* Default review model: `qwen3.8-flash`
-* High-risk review model: `qwen3.8-max`
+`agy` is a separate CLI account, not a Pi provider. Use its Gemini models directly for bounded investigation, implementation, or independent review without starting Herdr. For read-only work, run `agy --model gemini-3.8-flash-medium --mode plan --print '<task>'`; request findings with file/line and severity for reviews. When Herdr is explicitly active, use `herdr agent` for interactive `agy` sessions instead. Choose model by task and remaining quota (confirm with `agy models`; availability/cost can change):
 
-When using OCR from Pi, the model IDs above map to Pi's `opencode-go/qwen3.8-flash` and `opencode-go/qwen3.8-max`.
+* Gemini 3.8 Flash low/medium: inexpensive first pass for bounded research, broad-context exploration, or routine independent review; high when the task needs more reasoning.
+* Gemini 3.1 Pro high: difficult investigations, architectural critique, or high-risk independent review; use low for less demanding Pro work.
 
-Run it with agent-oriented output and a concise background:
-
-```bash
-ocr review --audience agent --format json --background "<review context>"
-```
-
-For large output, write to a file and return its path. OCR findings are evidence; Sol triages and decides which are actionable.
-
-### Independent Review and Gemini
-
-Use Antigravity `agy` with Gemini 3.1 Pro only as an additional independent reviewer or investigator, not as part of the normal implementation/review path. Use it when:
-
-* OCR and the implementation worker disagree on a significant issue
-* Sol wants a second independent opinion on a high-risk finding
-* the user explicitly requests Gemini or Antigravity
+Quota/capability rankings are heuristics, not guarantees. Start with a bounded prompt and escalate on evidence. For cross-harness work, pass a concise structured JSON task (goal, scope/files, constraints, expected output) and request JSON findings/result (files, checks, risks). Sol remains the sole coordinator. Prefer read-only investigation/review; if `agy` writes code, assign it exclusive files or an isolated worktree with consent under Git rules, never concurrent edits to the same files. Verify its edits as for any other worker.
 
 ### Herdr Orchestration Rules
 
@@ -141,20 +117,16 @@ When Herdr is active, this Pi agent is the orchestrator of the work session.
 When Herdr orchestration is active, it manages the lifecycle and visibility of Pi agents and supporting processes.
 
 * Use `herdr agent` for Pi agents (investigation, implementation, reasoning)
-* Use ordinary `herdr pane` commands for tests, linters, build/dev servers, and OCR
+* Use ordinary `herdr pane` commands for tests, linters, and build/dev servers
 
 A typical Herdr flow:
 
-1. Sol acts as captain
-2. Investigation workers gather context in parallel when useful
-3. One implementation worker performs the change
-4. Verification runs in managed panes
-5. OCR runs in a review pane against the resulting diff
-6. Sol collects findings and routes accepted fixes back to the implementation worker
-7. Verification runs again
-8. Sol decides whether another review pass is needed
+1. Sol assigns bounded investigation to Pi or `agy`, in parallel when useful
+2. One writer implements; tests/builds run in managed panes
+3. An independent Pi or `agy` worker reviews the diff
+4. Sol triages findings, routes fixes to the writer, and verifies again
 
-Keep long-running or parallel work visible in separate panes.
+Keep long-running work visible. For Herdr agent communications, use `herdr agent prompt <name> '<task>' --wait --timeout 900000` (milliseconds, 15 minutes) or `herdr agent wait <name> --timeout 900000` after other useful work; both should return when the agent settles, not after 15 minutes. Do not wait only for `done`: a seen tab can settle as `idle`. On early return or timeout, inspect `agent get` and `agent read` before retrying; `agy` may briefly appear idle while still generating. For that case, request a unique completion marker on its own line and use `herdr pane wait-output <pane-id> --regex '^ *MARKER *$' --source recent-unwrapped --timeout 900000` (replace `MARKER`; anchor it so the echoed prompt cannot match). If output is lost to alternate-screen scrollback, ask for a result file in `/tmp/` and read it. `herdr notification show` notifies the human, not a running Pi turn; agents cannot push a completion message directly to Sol via today's CLI. Use a settled-state wait when Sol must resume automatically; a true push callback requires a separate Pi/Herdr integration. Never inject into a working coordinator pane or short-poll in a token-consuming loop.
 
 ### General Principles
 
