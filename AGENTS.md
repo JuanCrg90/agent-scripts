@@ -45,13 +45,13 @@ Guardrails: use `trash` for deletes.
 
 ## Flow & Runtime
 
-Pi is the primary harness; `openai-codex/gpt-6-sol` is the primary orchestrator.
+Pi is the primary harness; `openai-codex/gpt-6.1-sol` is the primary orchestrator.
 
 Use Herdr only when the user explicitly requests it. When active, its installed skill governs pane/agent control, lifecycle, and output. Direct `agy` use does not require Herdr. Always use the `openai-codex` provider for GPT models, not `openai`. Do not route work to OpenCode models.
 
 ### Orchestrator
 
-Use `openai-codex/gpt-6-sol` as captain for new work.
+Use `openai-codex/gpt-6.1-sol` as coordinator for new work.
 
 Sol owns:
 
