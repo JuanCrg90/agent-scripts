@@ -5,7 +5,6 @@
   "description": "Pi-first source of truth for agent instructions, skills, and local tools.",
   "main": "index.js",
   "scripts": {
-    "browser-tools": "tsx scripts/browser-tools.ts",
     "test": "bash tests/setup-harness.sh"
   },
   "repository": {
@@ -22,12 +21,5 @@
   "bugs": {
     "url": "https://github.com/JuanCrg90/agent-scripts/issues"
   },
-  "homepage": "https://github.com/JuanCrg90/agent-scripts#readme",
-  "dependencies": {
-    "commander": "^15.0.0",
-    "puppeteer-core": "^25.9.0"
-  },
-  "devDependencies": {
-    "tsx": "^4.23.15"
-  }
+  "homepage": "https://github.com/JuanCrg90/agent-scripts#readme"
 }

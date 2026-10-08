@@ -1,15 +1,23 @@
 ---
 name: browser-testing-with-devtools
-description: Tests in real browsers via Chrome DevTools MCP. Use when building or debugging anything that runs in a browser. Use when you need to inspect the DOM, capture console errors, analyze network requests, profile performance, or verify visual output with real runtime data. Requires the chrome-devtools MCP server to be configured.
+description: Specialized browser diagnostics via Chrome DevTools MCP when Playwright cannot cover the task, such as detailed performance tracing. Prefer playwright-cli for browser manipulation and routine runtime verification. Requires the chrome-devtools MCP server to be configured.
 ---
 
 # Browser Testing with DevTools
 
 ## Overview
 
+Prefer [playwright-cli](../playwright-cli/SKILL.md) for browser manipulation and
+routine runtime verification, based on Juan's good results with Playwright.
+Use this skill only for specialized diagnostics that Playwright cannot cover,
+when Chrome DevTools MCP is configured.
+
 Use Chrome DevTools MCP to give your agent eyes into the browser. This bridges the gap between static code analysis and live browser execution — the agent can see what the user sees, inspect the DOM, read console logs, analyze network requests, and capture performance data. Instead of guessing what's happening at runtime, verify it.
 
 ## When to Use
+
+For the following tasks, start with `playwright-cli`. Use DevTools MCP only when
+its specialized capabilities are needed and it is configured:
 
 - Building or modifying anything that renders in a browser
 - Debugging UI issues (layout, styling, interaction)

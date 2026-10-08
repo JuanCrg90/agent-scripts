@@ -178,8 +178,10 @@ Keep long-running work visible. For Herdr agent communications, use `herdr agent
 
 ## Tools
 
-For browser automation, prefer the local browser CLI when the current project
-provides one. It should use Chrome DevTools Protocol directly rather than MCP.
+For browser automation and manipulation, prefer `playwright-cli`. Read
+`skills/playwright-cli/SKILL.md` for usage. Use Chrome DevTools MCP only for
+specialized diagnostics that Playwright cannot cover, when configured; it is
+not the default for browser interaction.
 
 ## RTK
 

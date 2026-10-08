@@ -42,28 +42,27 @@ AGY_HOME="$HOME/.config/agy" ./scripts/setup-harness agy
 CODEX_HOME="$HOME/.config/codex" ./scripts/setup-harness codex
 ```
 
-## Browser tools
+## Browser automation
 
-`browser-tools` drives Chrome through the DevTools Protocol without MCP. It
-requires Node.js 22.12 or newer, a Chrome or Chromium browser, and `rsync` when
-using `--profile`.
+Prefer `playwright-cli` for browser manipulation. It does not require MCP
+configuration. Install it separately using the
+[Playwright CLI skill](skills/playwright-cli/SKILL.md), which also
+covers browser setup, interactions, snapshots, and testing.
 
 ```sh
-pnpm install --frozen-lockfile
-pnpm run browser-tools start
-pnpm run browser-tools nav https://example.com
-pnpm run browser-tools screenshot
+playwright-cli open https://example.com
+playwright-cli snapshot
+playwright-cli screenshot
+playwright-cli close
 ```
 
-On macOS, Google Chrome is detected from `/Applications`. On Linux, the command
-checks `google-chrome`, `google-chrome-stable`, `chromium`, and
-`chromium-browser`. Use `--chrome-path` when your browser lives elsewhere.
+Chrome DevTools MCP remains optional for specialized diagnostics that Playwright
+cannot cover, when configured.
 
 ## Verification
 
 ```sh
 pnpm test
-pnpm run browser-tools --help
 ```
 
 ## Repository layout
@@ -72,7 +71,6 @@ pnpm run browser-tools --help
 - `skills/`: reusable Agent Skills packages.
 - `scripts/setup-pi`: default Pi setup.
 - `scripts/setup-agy`, `scripts/setup-codex`: opt-in setup for occasional use.
-- `scripts/browser-tools.ts`: Chrome DevTools CLI.
 - `tools.md`: tool catalog for agents.
 
 `.pi/` and `.antigravitycli/` are intentionally local and ignored. Keep
