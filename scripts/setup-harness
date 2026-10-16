@@ -25,6 +25,12 @@ link() {
     if [ -L "$destination" ] && [ "$(readlink "$destination")" = "$source" ]; then
       return
     fi
+    if [ "$destination" = "$config_dir/AGENTS.md" ] \
+      && [ -L "$destination" ] \
+      && [ "$(readlink "$destination")" = "$repo_dir/AGENTS.md" ]; then
+      ln -sfn "$source" "$destination"
+      return
+    fi
     printf 'Refusing to replace existing path: %s\n' "$destination" >&2
     exit 1
   fi
@@ -33,7 +39,7 @@ link() {
   ln -s "$source" "$destination"
 }
 
-link "$repo_dir/AGENTS.md" "$config_dir/AGENTS.md"
+link "$repo_dir/instructions/global.md" "$config_dir/AGENTS.md"
 link "$repo_dir/skills" "$config_dir/skills"
 link "$repo_dir/scripts/committer" "${COMMITTER_PATH:-"$HOME/.local/bin/committer"}"
 printf 'Linked %s configuration to %s\n' "$1" "$repo_dir"

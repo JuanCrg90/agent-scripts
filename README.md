@@ -14,10 +14,13 @@ cd agent-scripts
 ./scripts/setup-pi
 ```
 
-The setup command links `AGENTS.md` and `skills/` into
-`~/.pi/agent/`, plus `scripts/committer` into `~/.local/bin/committer`.
-Ensure `~/.local/bin` is on your `PATH`. It is safe to run again, but refuses
-to replace an existing file or a link to another source.
+The setup command links `instructions/global.md` as `AGENTS.md` and `skills/`
+into `~/.pi/agent/`, plus `scripts/committer` into
+`~/.local/bin/committer`. Ensure `~/.local/bin` is on your `PATH`. It is safe
+to rerun. Existing installations should rerun `./scripts/setup-pi` to migrate
+before reloading. Only the exact legacy managed symlink from this repository's
+old `AGENTS.md` is migrated; files, directories, and other (including dangling)
+links are preserved and cause setup to stop.
 
 ## Optional harnesses
 
@@ -34,7 +37,8 @@ configuration directory. They do not configure models, authentication, MCPs,
 or other machine-local settings.
 
 For a custom config directory, use the shared command with the harness's
-standard environment variable:
+standard environment variable. After changing linked instructions or skills,
+use `/reload` in Pi or restart the process to load updated resources:
 
 ```sh
 PI_CODING_AGENT_DIR="$HOME/.config/pi-agent" ./scripts/setup-harness pi
@@ -67,8 +71,10 @@ pnpm test
 
 ## Repository layout
 
-- `AGENTS.md`: shared operating instructions.
-- `skills/`: reusable Agent Skills packages.
+- `AGENTS.md`: short repository-local map and checks.
+- `instructions/global.md`: shared operating instructions linked to harnesses.
+- `skills/`: reusable Agent Skills packages; `skills/pi-delegation/` documents
+  bounded standalone Pi workers (Herdr is explicit opt-in).
 - `scripts/setup-pi`: default Pi setup.
 - `scripts/setup-agy`, `scripts/setup-codex`: opt-in setup for occasional use.
 - `tools.md`: tool catalog for agents.
